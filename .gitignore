@@ -1,0 +1,9 @@
+node_modules/
+.next/
+out/
+.env.local
+.local/
+*.log
+tsconfig.tsbuildinfo
+dynamodb-local-metadata.json
+.next-dev/

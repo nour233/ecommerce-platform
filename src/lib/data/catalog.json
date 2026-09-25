@@ -1,0 +1,111 @@
+{
+  "categories": [
+    {
+      "id": "cat-home",
+      "slug": "home-living",
+      "name": "Home & Living",
+      "description": "Comfortable pieces for everyday spaces.",
+      "imageUrl": "https://images.unsplash.com/photo-1513161455079-7dc1de15ef3e?auto=format&fit=crop&w=1200&q=80"
+    },
+    {
+      "id": "cat-tech",
+      "slug": "smart-tech",
+      "name": "Smart Tech",
+      "description": "Useful devices for focused, modern routines.",
+      "imageUrl": "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80"
+    },
+    {
+      "id": "cat-style",
+      "slug": "daily-style",
+      "name": "Daily Style",
+      "description": "Reliable essentials with polished materials.",
+      "imageUrl": "https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=1200&q=80"
+    }
+  ],
+  "products": [
+    {
+      "id": "prod-01",
+      "slug": "linen-lounge-chair",
+      "name": "Linen Lounge Chair",
+      "description": "A compact lounge chair with oak legs, dense cushions, and stain-resistant linen upholstery.",
+      "categoryId": "cat-home",
+      "categoryName": "Home & Living",
+      "price": 249,
+      "rating": 4.7,
+      "stock": 12,
+      "imageUrl": "https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?auto=format&fit=crop&w=1200&q=80",
+      "tags": ["furniture", "living room", "new"],
+      "createdAt": "2026-08-01T00:00:00.000Z"
+    },
+    {
+      "id": "prod-02",
+      "slug": "ceramic-desk-lamp",
+      "name": "Ceramic Desk Lamp",
+      "description": "Warm dimmable lighting with a matte ceramic base and braided cotton cord.",
+      "categoryId": "cat-home",
+      "categoryName": "Home & Living",
+      "price": 86,
+      "rating": 4.5,
+      "stock": 28,
+      "imageUrl": "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=1200&q=80",
+      "tags": ["lighting", "desk", "gift"],
+      "createdAt": "2026-07-14T00:00:00.000Z"
+    },
+    {
+      "id": "prod-03",
+      "slug": "wireless-focus-headphones",
+      "name": "Wireless Focus Headphones",
+      "description": "Noise reduction, 42-hour battery life, and a lightweight frame for work or travel.",
+      "categoryId": "cat-tech",
+      "categoryName": "Smart Tech",
+      "price": 179,
+      "rating": 4.8,
+      "stock": 18,
+      "imageUrl": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=1200&q=80",
+      "tags": ["audio", "wireless", "popular"],
+      "createdAt": "2026-09-05T00:00:00.000Z"
+    },
+    {
+      "id": "prod-04",
+      "slug": "portable-work-hub",
+      "name": "Portable Work Hub",
+      "description": "A USB-C hub with HDMI, fast charging, card reader, and aluminum heat management.",
+      "categoryId": "cat-tech",
+      "categoryName": "Smart Tech",
+      "price": 64,
+      "rating": 4.4,
+      "stock": 36,
+      "imageUrl": "https://images.unsplash.com/photo-1614064641938-3bbee52942c7?auto=format&fit=crop&w=1200&q=80",
+      "tags": ["desk", "usb-c", "travel"],
+      "createdAt": "2026-06-30T00:00:00.000Z"
+    },
+    {
+      "id": "prod-05",
+      "slug": "canvas-commuter-tote",
+      "name": "Canvas Commuter Tote",
+      "description": "A structured everyday tote with padded laptop storage, interior pockets, and water-resistant canvas.",
+      "categoryId": "cat-style",
+      "categoryName": "Daily Style",
+      "price": 98,
+      "rating": 4.6,
+      "stock": 20,
+      "imageUrl": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1200&q=80",
+      "tags": ["bag", "commute", "durable"],
+      "createdAt": "2026-05-18T00:00:00.000Z"
+    },
+    {
+      "id": "prod-06",
+      "slug": "merino-travel-cardigan",
+      "name": "Merino Travel Cardigan",
+      "description": "Soft merino blend cardigan designed for layering, easy packing, and year-round wear.",
+      "categoryId": "cat-style",
+      "categoryName": "Daily Style",
+      "price": 132,
+      "rating": 4.3,
+      "stock": 15,
+      "imageUrl": "https://images.unsplash.com/photo-1525507119028-ed4c629a60a3?auto=format&fit=crop&w=1200&q=80",
+      "tags": ["apparel", "travel", "comfort"],
+      "createdAt": "2026-04-22T00:00:00.000Z"
+    }
+  ]
+}
