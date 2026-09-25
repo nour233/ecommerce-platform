@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { Heart, PackageCheck, ShieldCheck } from "lucide-react";
 
 type AuthPageShellProps = {
-  mode: "login" | "register";
+  mode: "login" | "register" | "forgot";
   children: ReactNode;
 };
 
@@ -31,6 +31,18 @@ const content = {
     formEyebrow: "Free membership",
     formTitle: "Create your account.",
     formDescription: "A few details are all you need to get started."
+  },
+  forgot: {
+    eyebrow: "Account recovery",
+    title: "A secure way back to your account.",
+    description:
+      "Verify your email, choose a new password and return to every item you saved.",
+    image:
+      "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1800&q=90",
+    imageAlt: "A calm workspace with a laptop and carefully arranged essentials",
+    formEyebrow: "Password recovery",
+    formTitle: "Let’s get you signed in.",
+    formDescription: "We will send a private six-digit code to your email."
   }
 } as const;
 

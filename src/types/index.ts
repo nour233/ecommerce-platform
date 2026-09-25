@@ -45,6 +45,17 @@ export type RegistrationVerification = {
   expiresAtEpoch: number;
 };
 
+export type PasswordResetVerification = {
+  userId: string;
+  email: string;
+  codeHash: string;
+  attempts: number;
+  createdAt: string;
+  sentAt: string;
+  expiresAt: string;
+  expiresAtEpoch: number;
+};
+
 export type CartItem = {
   userId: string;
   productId: string;

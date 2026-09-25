@@ -7,7 +7,8 @@ import {
 import { createSession, hashPassword, verifyPassword } from "@/lib/auth";
 import { env } from "@/lib/env";
 import { AppError } from "@/lib/errors";
-import { sendRegistrationVerificationEmail } from "@/lib/mail";
+import { sendPasswordResetEmail, sendRegistrationVerificationEmail } from "@/lib/mail";
+import { passwordResetVerificationRepository } from "@/lib/repositories/password-reset-verifications";
 import { registrationVerificationRepository } from "@/lib/repositories/registration-verifications";
 import { userRepository } from "@/lib/repositories/users";
 import type { User } from "@/types";
@@ -22,6 +23,10 @@ const userIdForEmail = (email: string) =>
 const verificationCodeHash = (userId: string, code: string) =>
   createHmac("sha256", env.sessionSecret)
     .update(`${userId}:${code}`)
+    .digest("hex");
+const passwordResetCodeHash = (userId: string, code: string) =>
+  createHmac("sha256", env.sessionSecret)
+    .update(`password-reset:${userId}:${code}`)
     .digest("hex");
 const generateVerificationCode = () =>
   randomInt(100_000, 1_000_000).toString();
@@ -62,11 +67,23 @@ async function restoreVerification(
   }
 }
 
+async function restorePasswordReset(
+  previous: Awaited<ReturnType<typeof passwordResetVerificationRepository.get>>,
+  userId: string
+) {
+  try {
+    if (previous) await passwordResetVerificationRepository.save(previous);
+    else await passwordResetVerificationRepository.delete(userId);
+  } catch (error) {
+    console.error("Unable to restore password reset state", error);
+  }
+}
+
 export const authService = {
   async requestRegistration(name: string, email: string, password: string) {
     const normalizedEmail = normalizeEmail(email);
     const id = userIdForEmail(normalizedEmail);
-    if (await userRepository.getUser(id)) {
+    if (await userRepository.getUserByEmail(normalizedEmail)) {
       throw new AppError("An account already exists for this email", 409, "EMAIL_IN_USE");
     }
 
@@ -113,7 +130,7 @@ export const authService = {
   async resendRegistrationCode(email: string) {
     const normalizedEmail = normalizeEmail(email);
     const id = userIdForEmail(normalizedEmail);
-    if (await userRepository.getUser(id)) {
+    if (await userRepository.getUserByEmail(normalizedEmail)) {
       throw new AppError("An account already exists for this email", 409, "EMAIL_IN_USE");
     }
 
@@ -168,7 +185,7 @@ export const authService = {
   async verifyRegistration(email: string, code: string) {
     const normalizedEmail = normalizeEmail(email);
     const id = userIdForEmail(normalizedEmail);
-    if (await userRepository.getUser(id)) {
+    if (await userRepository.getUserByEmail(normalizedEmail)) {
       throw new AppError("An account already exists for this email", 409, "EMAIL_IN_USE");
     }
 
@@ -230,7 +247,7 @@ export const authService = {
   },
 
   async login(email: string, password: string) {
-    const user = await userRepository.getUserWithCredentials(userIdForEmail(email));
+    const user = await userRepository.getUserWithCredentialsByEmail(email);
     const valid = user
       ? await verifyPassword(password, user.passwordHash, user.passwordSalt)
       : false;
@@ -245,5 +262,102 @@ export const authService = {
       role: user.role,
       createdAt: user.createdAt
     };
+  },
+
+  async requestPasswordReset(email: string) {
+    const normalizedEmail = normalizeEmail(email);
+    const user = await userRepository.getUserByEmail(normalizedEmail);
+
+    // Always return the same result so the endpoint does not reveal account existence.
+    if (!user) return { email: normalizedEmail };
+
+    const previous = await passwordResetVerificationRepository.get(user.id);
+    if (previous && !isExpired(previous.expiresAt)) {
+      const sentAt = Date.parse(previous.sentAt);
+      if (Number.isFinite(sentAt) && Date.now() - sentAt < RESEND_COOLDOWN_MS) {
+        return { email: normalizedEmail };
+      }
+    }
+
+    const code = generateVerificationCode();
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + VERIFICATION_TTL_MS);
+    const verification = {
+      userId: user.id,
+      email: normalizedEmail,
+      codeHash: passwordResetCodeHash(user.id, code),
+      attempts: 0,
+      createdAt: previous?.createdAt ?? now.toISOString(),
+      sentAt: now.toISOString(),
+      expiresAt: expiresAt.toISOString(),
+      expiresAtEpoch: Math.floor(expiresAt.getTime() / 1000)
+    };
+
+    await passwordResetVerificationRepository.save(verification);
+    try {
+      await sendPasswordResetEmail({ to: normalizedEmail, name: user.name, code });
+    } catch (error) {
+      await restorePasswordReset(previous, user.id);
+      throw error;
+    }
+
+    return { email: normalizedEmail };
+  },
+
+  async resetPassword(email: string, code: string, password: string) {
+    const normalizedEmail = normalizeEmail(email);
+    const user = await userRepository.getUserByEmail(normalizedEmail);
+    if (!user) {
+      throw new AppError("The code is invalid or has expired", 400, "INVALID_PASSWORD_RESET");
+    }
+
+    const verification = await passwordResetVerificationRepository.get(user.id);
+    if (!verification || isExpired(verification.expiresAt)) {
+      if (verification) await passwordResetVerificationRepository.delete(user.id);
+      throw new AppError("The code is invalid or has expired", 400, "INVALID_PASSWORD_RESET");
+    }
+
+    const receivedHash = passwordResetCodeHash(user.id, code);
+    if (!codesMatch(verification.codeHash, receivedHash)) {
+      const attempts = verification.attempts + 1;
+      if (attempts >= MAX_VERIFICATION_ATTEMPTS) {
+        await passwordResetVerificationRepository.delete(user.id);
+        throw new AppError("Too many incorrect attempts. Request a new code.", 429, "RESET_ATTEMPTS_EXCEEDED");
+      }
+      await passwordResetVerificationRepository.save({ ...verification, attempts });
+      throw new AppError("The code is invalid or has expired", 400, "INVALID_PASSWORD_RESET");
+    }
+
+    await userRepository.updateCredentials(user.id, await hashPassword(password));
+    await passwordResetVerificationRepository.delete(user.id);
+    return { success: true };
+  },
+
+  async updateProfile(userId: string, name: string, email: string, currentPassword?: string) {
+    const user = await userRepository.getUserWithCredentials(userId);
+    if (!user) throw new AppError("User not found", 404, "USER_NOT_FOUND");
+
+    if (normalizeEmail(email) !== user.email) {
+      const passwordValid = currentPassword
+        ? await verifyPassword(currentPassword, user.passwordHash, user.passwordSalt)
+        : false;
+      if (!passwordValid) {
+        throw new AppError("Current password is required to change your email", 400, "PASSWORD_REQUIRED");
+      }
+    }
+
+    return userRepository.updateProfile(userId, name, email);
+  },
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string) {
+    const user = await userRepository.getUserWithCredentials(userId);
+    if (!user) throw new AppError("User not found", 404, "USER_NOT_FOUND");
+    const valid = await verifyPassword(currentPassword, user.passwordHash, user.passwordSalt);
+    if (!valid) throw new AppError("Current password is incorrect", 400, "INVALID_PASSWORD");
+    if (currentPassword === newPassword) {
+      throw new AppError("Choose a password different from your current password", 400, "PASSWORD_UNCHANGED");
+    }
+    await userRepository.updateCredentials(userId, await hashPassword(newPassword));
+    return { success: true };
   }
 };

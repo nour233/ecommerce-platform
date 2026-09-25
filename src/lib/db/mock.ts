@@ -4,6 +4,7 @@ import type {
   CartItem,
   Category,
   Product,
+  PasswordResetVerification,
   RegistrationVerification,
   User,
   WishlistItem
@@ -21,17 +22,19 @@ type Store = {
   cart: CartItem[];
   wishlist: WishlistItem[];
   registrationVerifications: RegistrationVerification[];
+  passwordResetVerifications: PasswordResetVerification[];
 };
 
 const globalForMock = globalThis as unknown as { commerceCraftStore?: Store };
 
 const initialStore: Store = {
-    users: [demoUser],
-    products,
-    categories,
-    cart: [],
-    wishlist: [],
-    registrationVerifications: []
+  users: [demoUser],
+  products,
+  categories,
+  cart: [],
+  wishlist: [],
+  registrationVerifications: [],
+  passwordResetVerifications: []
 };
 
 export const store: Store =

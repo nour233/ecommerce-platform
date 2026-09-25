@@ -1,11 +1,29 @@
 import { currentUserId } from "@/lib/api";
 import { toErrorResponse } from "@/lib/errors";
 import { userRepository } from "@/lib/repositories/users";
+import { authService } from "@/lib/services/auth-service";
+import { profileUpdateSchema } from "@/lib/validators";
 
 export async function GET() {
   try {
     const user = await userRepository.getUser(await currentUserId());
     return user ? Response.json({ data: user }) : Response.json({ error: "User not found" }, { status: 404 });
+  } catch (error) {
+    return toErrorResponse(error);
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const userId = await currentUserId();
+    const payload = profileUpdateSchema.parse(await request.json());
+    const user = await authService.updateProfile(
+      userId,
+      payload.name,
+      payload.email,
+      payload.currentPassword
+    );
+    return Response.json({ data: user });
   } catch (error) {
     return toErrorResponse(error);
   }

@@ -24,6 +24,25 @@ export const resendVerificationSchema = z.object({
   email: emailSchema
 });
 
+export const passwordResetRequestSchema = z.object({
+  email: emailSchema
+});
+
+export const passwordResetConfirmSchema = verificationCodeSchema.extend({
+  password: z.string().min(8, "Password must contain at least 8 characters").max(128)
+});
+
+export const profileUpdateSchema = z.object({
+  name: z.string().trim().min(2, "Name must contain at least 2 characters").max(80),
+  email: emailSchema,
+  currentPassword: z.string().min(8).max(128).optional()
+});
+
+export const passwordChangeSchema = z.object({
+  currentPassword: z.string().min(8).max(128),
+  newPassword: z.string().min(8, "Password must contain at least 8 characters").max(128)
+});
+
 export const cartItemSchema = z.object({
   productId: z.string().min(1, "Product is required"),
   quantity: z.number().int().min(1).max(20)

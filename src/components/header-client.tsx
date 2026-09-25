@@ -122,10 +122,10 @@ export function HeaderClient({ user, categories }: HeaderClientProps) {
 
             {user ? (
               <div className="ml-1 flex items-center border-l border-white/15 pl-2">
-                <div className="hidden max-w-32 px-2 leading-tight xl:block" title={user.name}>
+                <Link href="/profile" className="hidden max-w-32 rounded-md px-2 py-1 leading-tight transition hover:bg-white/10 xl:block" title={`${user.name} profile`}>
                   <span className="block text-[10px] text-white/55">Welcome back</span>
                   <span className="block truncate text-xs font-bold">{user.name.split(" ")[0]}</span>
-                </div>
+                </Link>
                 <LogoutButton tone="dark" />
               </div>
             ) : (
@@ -176,6 +176,7 @@ export function HeaderClient({ user, categories }: HeaderClientProps) {
                 <div><p className="text-xs text-slate-500">Signed in as</p><p className="font-bold text-ink">{user.name}</p></div>
               </div>
             ) : null}
+            {user ? <Link onClick={() => setMenuOpen(false)} href="/profile" className="rounded-md px-3 py-3 text-sm font-semibold hover:bg-slate-50">Profile & security</Link> : null}
             <Link onClick={() => setMenuOpen(false)} href="/" className="rounded-md px-3 py-3 text-sm font-semibold hover:bg-slate-50">Home</Link>
             <Link onClick={() => setMenuOpen(false)} href="/products" className="rounded-md px-3 py-3 text-sm font-semibold hover:bg-slate-50">Shop all products</Link>
             <p className="px-3 pb-1 pt-4 text-[10px] font-bold uppercase text-slate-400">Collections</p>

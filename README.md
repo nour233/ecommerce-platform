@@ -8,6 +8,8 @@ CommerceCraft is a production-style full-stack e-commerce application built for 
 - Search, category and price filters, sorting, and related products
 - User registration, login, logout, password hashing, and signed HTTP-only sessions
 - Email verification with expiring one-time codes before account creation
+- Password recovery by email with expiring, attempt-limited one-time codes
+- Protected member profile with editable name, email, and password
 - Role-based access control with a protected administration dashboard
 - Admin CRUD for products and categories, plus user role and account management
 - Persistent per-user cart with quantity updates, removal, stock validation, and subtotal calculation
@@ -51,7 +53,7 @@ src/
     repositories/          Database CRUD operations
     services/              Authentication, catalog, cart, and wishlist logic
     auth.ts                Password hashing and signed sessions
-    mail.ts                SMTP delivery for registration verification codes
+    mail.ts                SMTP delivery for registration and password reset codes
     validators.ts          Zod request schemas
   types/                   Shared domain interfaces
 ```
@@ -63,7 +65,9 @@ CommerceCraft uses one table named `CommerceCraft` by default. It has a string p
 | Entity | Partition key (`pk`) | Sort key (`sk`) |
 | --- | --- | --- |
 | User | `USER#{sha256(email)}` | `PROFILE` |
+| Email lookup | `EMAIL#{sha256(email)}` | `LOOKUP` |
 | Pending registration | `VERIFICATION#{sha256(email)}` | `REGISTRATION` |
+| Pending password reset | `PASSWORD_RESET#{userId}` | `VERIFICATION` |
 | Product | `PRODUCTS` | `PRODUCT#{productId}` |
 | Category | `CATEGORIES` | `CATEGORY#{categoryId}` |
 | Cart item | `USER#{userId}` | `CART#{productId}` |
@@ -74,7 +78,9 @@ CommerceCraft uses one table named `CommerceCraft` by default. It has a string p
 | Operation | DynamoDB access |
 | --- | --- |
 | Register/read a user | Conditional `PutItem` and `GetItem` using `USER#... / PROFILE` |
+| Find or update a profile by email | `GetItem` using `EMAIL#... / LOOKUP`, then the stable user ID |
 | Request/verify registration | `PutItem`, `GetItem`, and `DeleteItem` using `VERIFICATION#... / REGISTRATION` |
+| Request/verify password reset | `PutItem`, `GetItem`, and `DeleteItem` using `PASSWORD_RESET#... / VERIFICATION` |
 | List/read products | `Query` on `PRODUCTS`, or `GetItem` using the product sort key |
 | List categories | `Query` on `CATEGORIES` |
 | Read a user's cart | `Query` on `USER#{userId}` with sort-key prefix `CART#` |
@@ -92,7 +98,7 @@ User profiles store a `role` of `customer` or `admin`. New registrations are cus
 npm.cmd run admin:promote -- user@example.com
 ```
 
-Pending registrations store only a password hash and an HMAC of the six-digit code. Codes expire after 10 minutes, verification is limited to five attempts, and AWS deployments enable DynamoDB TTL on `expiresAtEpoch` to clean up abandoned registrations.
+Pending registrations store only a password hash and an HMAC of the six-digit code. Password recovery records also store only an HMAC of the reset code. Codes expire after 10 minutes, verification is limited to five attempts, and AWS deployments enable DynamoDB TTL on `expiresAtEpoch` to clean up abandoned flows.
 
 ## Local Development with NoSQL Workbench
 
@@ -193,10 +199,14 @@ The AWS SDK uses its standard credential provider chain, so local AWS CLI profil
 | `POST /api/auth/login` | Authenticate and create a session |
 | `POST /api/auth/logout` | Clear the session |
 | `GET /api/auth/session` | Read the current session user |
+| `POST /api/auth/password-reset/request` | Email a password recovery code without exposing account existence |
+| `POST /api/auth/password-reset/confirm` | Verify the recovery code and replace the password |
 | `GET /api/products` | Search, filter, sort, and list products |
 | `GET /api/products/:id` | Read one product |
 | `GET /api/categories` | List categories |
 | `GET /api/users/current` | Read the authenticated user |
+| `PATCH /api/users/current` | Update the authenticated user's name or email |
+| `PATCH /api/users/current/password` | Change the password after verifying the current password |
 | `POST /api/admin/products` | Admin: create a product |
 | `PATCH`, `DELETE /api/admin/products/:id` | Admin: update or delete a product |
 | `POST /api/admin/categories` | Admin: create a category |

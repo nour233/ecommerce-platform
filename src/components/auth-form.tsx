@@ -195,7 +195,10 @@ export function AuthForm({ mode, nextPath }: AuthFormProps) {
             </span>
           </label>
           <label className="block text-sm font-semibold text-ink">
-            Password
+            <span className="flex items-center justify-between">
+              Password
+              {!isRegister ? <Link href="/forgot-password" className="text-xs font-semibold text-moss hover:underline">Forgot password?</Link> : null}
+            </span>
             <span className="relative mt-2 block">
               <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink/35" aria-hidden="true" />
               <input
