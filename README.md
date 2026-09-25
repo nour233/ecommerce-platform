@@ -130,21 +130,26 @@ Prerequisites: Node.js 20 or newer, an AWS account, AWS CLI credentials with Dyn
 aws configure
 ```
 
-2. Create the local environment file.
+2. Create a production-only environment file. It is ignored by Git and keeps the
+cloud settings separate from DynamoDB Local.
 
 ```powershell
-Copy-Item .env.example .env.local
+Copy-Item .env.production.example .env.production.local
 ```
 
-3. Replace `SESSION_SECRET` in `.env.local` with a long random value. Keep `USE_MOCK_DB=false` for the assessed DynamoDB version.
+3. Replace `SESSION_SECRET` in `.env.production.local` with a long random value.
+Keep `USE_MOCK_DB=false` and leave `DYNAMODB_ENDPOINT` absent for AWS.
 
-4. Configure the `SMTP_*` and `MAIL_FROM` variables in `.env.local`. Registration creates an account only after the user enters the six-digit code delivered by email.
+4. Configure the AWS access key values plus `SMTP_*` and `MAIL_FROM` in
+`.env.production.local`. Registration creates an account only after the user
+enters the six-digit code delivered by email.
 
 5. Install dependencies, create the table, and seed products and categories.
 
 ```bash
 npm install
-npm run db:setup
+$env:ENV_FILE = ".env.production.local"
+npm.cmd run db:setup
 ```
 
 `db:setup` is idempotent: it reuses the table if it already exists and safely writes the catalog seed records.
@@ -223,6 +228,36 @@ Add final screenshots here before submission after connecting the deployed appli
 
 ## Deployment and Submission
 
-Deploy the Next.js application to a Node.js-compatible host. Add the environment variables through the host's secret manager and grant the runtime IAM identity access only to the CommerceCraft table. Run `npm run db:setup` once with authorized AWS credentials before opening the deployed application.
+### Deploy to Vercel and AWS
+
+The deployed site must use **AWS DynamoDB**, not the local Workbench database.
+Vercel cannot reach `http://127.0.0.1:8000`.
+
+1. Create an AWS account and choose one region (for example `eu-west-1`). Create
+an IAM identity with DynamoDB access restricted to the `CommerceCraft` table.
+Create an access key for that identity. Keep the secret outside Git and do not
+paste it into source files.
+2. Follow the **AWS DynamoDB Setup** section above. In PowerShell, use
+`.env.production.local` and run `npm.cmd run db:setup` once. This creates the
+cloud table, enables TTL for verification codes, and seeds categories/products.
+3. Go to [Vercel](https://vercel.com/new), sign in with GitHub, and import
+`nour233/ecommerce-platform`. Vercel detects Next.js automatically.
+4. Before deploying, open the project's **Environment Variables** section and
+add the values from `.env.production.local`: `AWS_REGION`,
+`DYNAMODB_TABLE_NAME`, `USE_MOCK_DB`, `SESSION_SECRET`, all `SMTP_*` variables,
+`MAIL_FROM`, `AWS_ACCESS_KEY_ID`, and `AWS_SECRET_ACCESS_KEY`. Do **not** add
+`DYNAMODB_ENDPOINT`.
+5. Deploy. Copy the generated `https://...vercel.app` URL and test registration,
+email verification, login, products, cart, wishlist, and admin access.
+6. After registering the first cloud user, promote that account using the same
+production file:
+
+```powershell
+$env:ENV_FILE = ".env.production.local"
+npm.cmd run admin:promote -- your-admin-email@example.com
+```
+
+7. Every later push to the `main` branch creates a new production deployment.
+When changing an environment variable in Vercel, redeploy so the server uses it.
 
 Submit the GitHub repository URL, live deployment URL, this README, and final application screenshots through the Internship Dashboard.

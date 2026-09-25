@@ -4,7 +4,8 @@ import process from "node:process";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, GetCommand, PutCommand } from "@aws-sdk/lib-dynamodb";
 
-if (existsSync(".env.local")) process.loadEnvFile(".env.local");
+const envFile = process.env.ENV_FILE ?? ".env.local";
+if (existsSync(envFile)) process.loadEnvFile(envFile);
 
 const email = process.argv[2]?.trim().toLowerCase();
 if (!email) {

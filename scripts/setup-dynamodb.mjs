@@ -14,8 +14,9 @@ import {
   DynamoDBDocumentClient
 } from "@aws-sdk/lib-dynamodb";
 
-if (existsSync(".env.local")) {
-  process.loadEnvFile(".env.local");
+const envFile = process.env.ENV_FILE ?? ".env.local";
+if (existsSync(envFile)) {
+  process.loadEnvFile(envFile);
 }
 
 const region = process.env.AWS_REGION ?? "us-east-1";
