@@ -1,6 +1,15 @@
 "use client";
 
-import { ArrowLeft, MailCheck, RefreshCw } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  LockKeyhole,
+  Mail,
+  MailCheck,
+  RefreshCw,
+  ShieldCheck,
+  UserRound
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
@@ -155,41 +164,54 @@ export function AuthForm({ mode, nextPath }: AuthFormProps) {
       ) : (
         <>
           {isRegister ? (
-            <label className="block text-sm font-semibold">
-              Name
-              <input
-                name="name"
-                type="text"
-                autoComplete="name"
-                required
-                minLength={2}
-                className="focus-ring mt-2 h-12 w-full rounded-md border border-ink/15 bg-white px-4 font-normal"
-              />
+            <label className="block text-sm font-semibold text-ink">
+              Full name
+              <span className="relative mt-2 block">
+                <UserRound className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink/35" aria-hidden="true" />
+                <input
+                  name="name"
+                  type="text"
+                  autoComplete="name"
+                  placeholder="Your full name"
+                  required
+                  minLength={2}
+                  className="focus-ring h-14 w-full rounded-md border border-ink/15 bg-white pl-12 pr-4 font-normal transition hover:border-ink/30"
+                />
+              </span>
             </label>
           ) : null}
-          <label className="block text-sm font-semibold">
+          <label className="block text-sm font-semibold text-ink">
             Email
-            <input
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              className="focus-ring mt-2 h-12 w-full rounded-md border border-ink/15 bg-white px-4 font-normal"
-            />
+            <span className="relative mt-2 block">
+              <Mail className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink/35" aria-hidden="true" />
+              <input
+                name="email"
+                type="email"
+                autoComplete="email"
+                placeholder="you@example.com"
+                required
+                className="focus-ring h-14 w-full rounded-md border border-ink/15 bg-white pl-12 pr-4 font-normal transition hover:border-ink/30"
+              />
+            </span>
           </label>
-          <label className="block text-sm font-semibold">
+          <label className="block text-sm font-semibold text-ink">
             Password
-            <input
-              name="password"
-              type="password"
-              autoComplete={isRegister ? "new-password" : "current-password"}
-              required
-              minLength={8}
-              className="focus-ring mt-2 h-12 w-full rounded-md border border-ink/15 bg-white px-4 font-normal"
-            />
+            <span className="relative mt-2 block">
+              <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink/35" aria-hidden="true" />
+              <input
+                name="password"
+                type="password"
+                autoComplete={isRegister ? "new-password" : "current-password"}
+                placeholder="At least 8 characters"
+                required
+                minLength={8}
+                className="focus-ring h-14 w-full rounded-md border border-ink/15 bg-white pl-12 pr-4 font-normal transition hover:border-ink/30"
+              />
+            </span>
             {isRegister ? (
-              <span className="mt-2 block text-xs font-normal text-ink/60">
-                At least 8 characters
+              <span className="mt-2 flex items-center gap-2 text-xs font-normal text-ink/55">
+                <ShieldCheck className="h-3.5 w-3.5 text-moss" aria-hidden="true" />
+                Use 8 or more characters
               </span>
             ) : null}
           </label>
@@ -211,7 +233,7 @@ export function AuthForm({ mode, nextPath }: AuthFormProps) {
       <button
         type="submit"
         disabled={loading}
-        className="focus-ring h-12 w-full rounded-md bg-ink text-sm font-semibold text-white transition hover:bg-ink/90 disabled:cursor-wait disabled:opacity-60"
+        className="focus-ring group flex h-14 w-full items-center justify-center gap-2 rounded-md bg-ink text-sm font-semibold text-white transition hover:bg-clay disabled:cursor-wait disabled:opacity-60"
       >
         {loading
           ? "Please wait..."
@@ -220,6 +242,9 @@ export function AuthForm({ mode, nextPath }: AuthFormProps) {
             : isRegister
               ? "Send verification code"
               : "Log in"}
+        {!loading && !isVerificationStep ? (
+          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+        ) : null}
       </button>
       {isVerificationStep ? (
         <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
@@ -249,6 +274,12 @@ export function AuthForm({ mode, nextPath }: AuthFormProps) {
           {isRegister ? "Log in" : "Create an account"}
         </Link>
       </p>
+      {!isVerificationStep ? (
+        <div className="flex items-center justify-center gap-2 border-t border-ink/10 pt-5 text-xs text-ink/50">
+          <ShieldCheck className="h-4 w-4 text-moss" aria-hidden="true" />
+          Your account details stay private and protected.
+        </div>
+      ) : null}
     </form>
   );
 }
