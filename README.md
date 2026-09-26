@@ -131,4 +131,31 @@ The local application runs at `http://localhost:3000`. Configure the same AWS Dy
 
 ## Final Application Screenshots
 
-Final views include the homepage, product catalog with filters, product detail page, cart, wishlist, and login page.
+
+### Homepage
+
+![Homepage](public/screenshots/home.jpg)
+
+### Product catalog
+
+![Product catalog](public/screenshots/products.jpg)
+
+### Search suggestions
+
+![Search suggestions](public/screenshots/search.jpg)
+
+### Product details
+
+![Product details](public/screenshots/product-details.jpg)
+
+### Shopping cart
+
+![Shopping cart](public/screenshots/cart.jpg)
+
+### Wishlist
+
+![Wishlist](public/screenshots/wishlist.jpg)
+
+### Administration dashboard
+
+![Administration dashboard](public/screenshots/admin.jpg)
