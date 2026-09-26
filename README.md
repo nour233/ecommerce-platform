@@ -160,4 +160,4 @@ The local application runs at `http://localhost:3000`. Configure the same AWS Dy
 
 ### Administration dashboard
 
-![Administration dashboard](public/screenshots/admin.jpg?v=57df461)
+![Administration dashboard](https://raw.githubusercontent.com/nour233/ecommerce-platform/57df46191e1d543ad3394957ad543dc1f8b8071d/public/screenshots/admin.jpg)
