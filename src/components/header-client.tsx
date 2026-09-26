@@ -8,7 +8,7 @@ import {
   ArrowUpRight,
   ChevronDown,
   Heart,
-  MapPin,
+  Gem,
   Menu,
   Search,
   ShoppingBag,
@@ -40,6 +40,7 @@ export function HeaderClient({ user, categories, products }: HeaderClientProps) 
     if (normalizedQuery.length < 2) return [];
     return products.filter((product) => [product.name, product.categoryName, ...product.tags].some((value) => value.toLowerCase().includes(normalizedQuery))).slice(0, 5);
   }, [normalizedQuery, products]);
+  const accountInitials = user?.name.split(" ").filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() ?? "";
 
   if (pathname.startsWith("/admin")) return null;
 
@@ -93,8 +94,8 @@ export function HeaderClient({ user, categories, products }: HeaderClientProps) 
           </Link>
 
           <div className="hidden shrink-0 items-center gap-2 border-l border-white/15 pl-4 xl:flex">
-            <MapPin size={18} className="text-[#ff9d72]" aria-hidden="true" />
-            <div className="leading-tight"><span className="block text-[10px] text-white/55">Delivering to</span><span className="block text-xs font-bold">Tunisia</span></div>
+            <Gem size={18} className="text-[#ff9d72]" aria-hidden="true" />
+            <div className="leading-tight"><span className="block text-[10px] font-bold uppercase tracking-[0.12em] text-white/45">The weekly edit</span><span className="block text-xs font-bold">Fresh arrivals</span></div>
           </div>
 
           <div className="hidden min-w-0 flex-1 px-2 lg:flex">{searchForm()}</div>
@@ -111,10 +112,10 @@ export function HeaderClient({ user, categories, products }: HeaderClientProps) 
             </Link>
 
             {user ? (
-              <div className="ml-1 flex items-center border-l border-white/15 pl-2">
-                <Link href="/profile" className="hidden max-w-32 rounded-md px-2 py-1 leading-tight transition hover:bg-white/10 xl:block" title={`${user.name} profile`}>
-                  <span className="block text-[10px] text-white/55">Welcome back</span>
-                  <span className="block truncate text-xs font-bold">{user.name.split(" ")[0]}</span>
+              <div className="ml-1 flex items-center gap-1 border-l border-white/15 pl-2">
+                <Link href="/profile" className="flex h-11 items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-2 transition hover:border-[#ff9d72] hover:bg-white/10 sm:px-2.5" title="Open your account">
+                  <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[#ef8354] text-[10px] font-bold text-[#172033]">{accountInitials}</span>
+                  <span className="hidden max-w-24 leading-tight xl:block"><span className="block text-[10px] text-white/55">My account</span><span className="block truncate text-xs font-bold">View profile</span></span>
                 </Link>
                 <LogoutButton tone="dark" />
               </div>
@@ -138,14 +139,13 @@ export function HeaderClient({ user, categories, products }: HeaderClientProps) 
             <button type="button" onClick={() => setCollectionsOpen((open) => !open)} aria-expanded={collectionsOpen} aria-controls="collections-menu" className={`flex items-center gap-1 rounded-md px-3 py-2 text-xs font-bold transition hover:bg-slate-100 ${pathname.startsWith("/categories/") ? "text-[#d75e36]" : "text-slate-700"}`}>
               Collections <ChevronDown size={14} className={`transition ${collectionsOpen ? "rotate-180" : ""}`} />
             </button>
-            {collectionsOpen ? <div id="collections-menu" className="absolute left-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-md border border-slate-200 bg-white p-2 shadow-2xl">
-              <p className="px-3 pb-2 pt-1 text-[10px] font-bold uppercase text-slate-400">Shop by collection</p>
-              {categories.map((category) => (
-                <Link key={category.id} onClick={() => setCollectionsOpen(false)} href={`/categories/${category.slug}`} className="block rounded-md px-3 py-3 transition hover:bg-slate-50">
-                  <span className="block text-sm font-semibold text-slate-900">{category.name}</span>
-                  <span className="mt-0.5 line-clamp-1 block text-xs text-slate-500">{category.description}</span>
+            {collectionsOpen ? <div id="collections-menu" className="absolute left-0 top-full z-50 mt-3 w-[360px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.24)]">
+              <div className="bg-[#172033] px-5 py-4 text-white"><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#ff9d72]">Shop by collection</p><p className="mt-1 text-base font-bold">Find your next favourite</p></div>
+              <div className="p-2.5">{categories.map((category, index) => (
+                <Link key={category.id} onClick={() => setCollectionsOpen(false)} href={`/categories/${category.slug}`} className="group flex items-center gap-3 rounded-lg px-3 py-3 transition hover:bg-[#fff2ec]">
+                  <span className="grid size-9 shrink-0 place-items-center rounded-full bg-slate-100 text-xs font-bold text-slate-500 transition group-hover:bg-[#ef8354] group-hover:text-[#172033]">{String(index + 1).padStart(2, "0")}</span><span className="min-w-0 flex-1"><span className="block text-sm font-bold text-slate-900">{category.name}</span><span className="mt-0.5 line-clamp-1 block text-xs text-slate-500">{category.description}</span></span><ArrowUpRight size={16} className="text-slate-300 transition group-hover:text-[#d75e36]" />
                 </Link>
-              ))}
+              ))}</div>
             </div> : null}
           </div>
           {categories.map((category) => (

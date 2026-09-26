@@ -18,8 +18,9 @@ export function ProductActions({ productId, compact = false }: ProductActionsPro
   const [loading, setLoading] = useState<"cart" | "wishlist" | null>(null);
   const [message, setMessage] = useState("");
   const { items, setItems } = useWishlist();
-  const { setCart } = useCart();
+  const { cart, setCart } = useCart();
   const saved = items.some((item) => item.productId === productId);
+  const quantityInCart = cart.items.find((item) => item.productId === productId)?.quantity ?? 0;
 
   async function addToCart() {
     setLoading("cart");
@@ -74,14 +75,15 @@ export function ProductActions({ productId, compact = false }: ProductActionsPro
         onClick={addToCart}
         disabled={loading === "cart"}
         className={clsx(
-          "focus-ring inline-flex h-10 items-center justify-center rounded-md bg-ink px-3 text-sm font-semibold text-white transition hover:bg-ink/90 disabled:cursor-wait disabled:opacity-60",
+          "focus-ring relative inline-flex h-10 items-center justify-center rounded-md bg-ink px-3 text-sm font-semibold text-white transition hover:bg-ink/90 disabled:cursor-wait disabled:opacity-60",
           compact ? "w-10 px-0" : "gap-2"
         )}
-        aria-label="Add to cart"
-        title="Add to cart"
+        aria-label={quantityInCart ? `Add another item to cart. ${quantityInCart} already in cart` : "Add to cart"}
+        title={quantityInCart ? `${quantityInCart} in your cart` : "Add to cart"}
       >
         <ShoppingCart size={17} aria-hidden="true" />
         {!compact ? <span>{loading === "cart" ? "Adding" : "Add to cart"}</span> : null}
+        {quantityInCart ? <span aria-live="polite" className="absolute -right-2 -top-2 grid size-5 place-items-center rounded-full border-2 border-white bg-[#ef8354] text-[10px] font-bold tabular-nums text-[#172033] shadow-sm">{quantityInCart}</span> : null}
       </button>
       <button
         type="button"

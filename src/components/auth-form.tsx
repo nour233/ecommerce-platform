@@ -3,8 +3,6 @@
 import {
   ArrowLeft,
   ArrowRight,
-  Eye,
-  EyeOff,
   LockKeyhole,
   Mail,
   MailCheck,
@@ -15,6 +13,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import { PasswordVisibilityToggle } from "@/components/password-visibility-toggle";
 
 type AuthFormProps = {
   mode: "login" | "register";
@@ -206,16 +205,14 @@ export function AuthForm({ mode, nextPath }: AuthFormProps) {
               <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink/35" aria-hidden="true" />
               <input
                 name="password"
-                type={!isRegister && passwordVisible ? "text" : "password"}
+                type={passwordVisible ? "text" : "password"}
                 autoComplete={isRegister ? "new-password" : "current-password"}
                 placeholder="At least 8 characters"
                 required
                 minLength={8}
                 className="focus-ring h-14 w-full rounded-md border border-ink/15 bg-white pl-12 pr-12 font-normal transition hover:border-ink/30"
               />
-              {!isRegister ? <button type="button" onClick={() => setPasswordVisible((visible) => !visible)} aria-label={passwordVisible ? "Hide password" : "Show password"} aria-pressed={passwordVisible} className="focus-ring absolute right-3 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-md text-ink/50 transition hover:bg-ink/5 hover:text-ink">
-                {passwordVisible ? <EyeOff className="h-5 w-5" aria-hidden="true" /> : <Eye className="h-5 w-5" aria-hidden="true" />}
-              </button> : null}
+              <PasswordVisibilityToggle visible={passwordVisible} onToggle={() => setPasswordVisible((visible) => !visible)} />
             </span>
             {isRegister ? (
               <span className="mt-2 flex items-center gap-2 text-xs font-normal text-ink/55">

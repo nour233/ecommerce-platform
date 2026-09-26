@@ -37,6 +37,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
             categoryName: product.categoryName,
             tags: product.tags
           }))}
+          maxBudget={Math.ceil(Math.max(...catalog.map((product) => product.price)) / 10) * 10}
           resultCount={products.length}
           defaults={{
             q: typeof resolved.q === "string" ? resolved.q : "",

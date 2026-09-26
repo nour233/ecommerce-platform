@@ -9,6 +9,8 @@ export const keys = {
   emailLookupSk: "USER",
   productPk: "PRODUCTS",
   productSk: (productId: string) => `PRODUCT#${productId}`,
+  reviewPk: (productId: string) => `REVIEWS#${productId}`,
+  reviewSk: (reviewId: string) => `REVIEW#${reviewId}`,
   categoryPk: "CATEGORIES",
   categorySk: (categoryId: string) => `CATEGORY#${categoryId}`,
   cartPk: (userId: string) => `USER#${userId}`,

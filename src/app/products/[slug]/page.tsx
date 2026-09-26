@@ -4,6 +4,8 @@ import { Check, RefreshCcw, ShieldCheck, Star, Truck } from "lucide-react";
 import { catalogService } from "@/lib/services/catalog-service";
 import { ProductActions } from "@/components/product-actions";
 import { ProductGrid } from "@/components/product-grid";
+import { ProductReviews } from "@/components/product-reviews";
+import { reviewRepository } from "@/lib/repositories/reviews";
 
 type ProductDetailProps = {
   params: Promise<{ slug: string }>;
@@ -15,6 +17,7 @@ export default async function ProductDetailPage({ params }: ProductDetailProps) 
   if (!page) notFound();
 
   const { product, related } = page;
+  const reviews = await reviewRepository.list(product.id);
 
   return (
     <div className="bg-white">
@@ -28,7 +31,7 @@ export default async function ProductDetailPage({ params }: ProductDetailProps) 
               <Star size={16} className="fill-clay text-clay" aria-hidden="true" />
               {product.rating}
             </span>
-            <span>{product.stock} in stock</span>
+            <span>{product.stock} in stock</span><span>·</span><span>{reviews.length} reviews</span>
           </div>
           <p className="mt-7 text-3xl font-bold text-[#172033]">${product.price.toFixed(2)}</p>
           <p className="mt-5 max-w-xl leading-8 text-slate-600">{product.description}</p>
@@ -45,6 +48,7 @@ export default async function ProductDetailPage({ params }: ProductDetailProps) 
           <div className="mt-8 grid gap-3 border-t border-slate-200 pt-6 text-sm text-slate-600 sm:grid-cols-2"><p className="flex items-center gap-2"><Truck size={17} className="text-emerald-700" />Free shipping over $100</p><p className="flex items-center gap-2"><RefreshCcw size={17} className="text-emerald-700" />30-day easy returns</p><p className="flex items-center gap-2"><ShieldCheck size={17} className="text-emerald-700" />Secure checkout</p><p className="flex items-center gap-2"><Check size={17} className="text-emerald-700" />Quality checked</p></div>
         </div>
       </section>
+      <ProductReviews productId={product.id} initialReviews={reviews} />
       <section className="mx-auto max-w-[1500px] px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
         <p className="text-sm font-semibold uppercase text-emerald-700">Complete the edit</p><h2 className="mb-8 mt-2 text-3xl font-bold text-[#172033]">You may also like</h2>
         <ProductGrid products={related} />

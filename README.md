@@ -103,7 +103,7 @@ Repositories provide read, create, update, and delete operations. Cart and wishl
 | --- | --- |
 | `AWS_REGION` | AWS region containing the DynamoDB table |
 | `DYNAMODB_TABLE_NAME` | DynamoDB table name |
-| `DYNAMODB_ENDPOINT` | DynamoDB Local endpoint for development |
+| `DYNAMODB_ENDPOINT` | Leave unset so local and hosted environments use the shared AWS table |
 | `USE_MOCK_DB` | Optional local in-memory storage switch |
 | `SESSION_SECRET` | Session cookie signing secret |
 | `SMTP_HOST` | SMTP server hostname |
@@ -112,6 +112,8 @@ Repositories provide read, create, update, and delete operations. Cart and wishl
 | `SMTP_USER` | SMTP account |
 | `SMTP_PASS` | SMTP password or app password |
 | `MAIL_FROM` | Sender email address |
+| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name used for image uploads |
+| `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET` | Unsigned Cloudinary upload preset used by the admin dashboard |
 | `AWS_ACCESS_KEY_ID` | AWS access key for cloud environments |
 | `AWS_SECRET_ACCESS_KEY` | AWS secret key for cloud environments |
 
@@ -121,18 +123,11 @@ Secrets are stored in `.env*.local` files or in the hosting provider's secret ma
 
 ```powershell
 npm install
-npm.cmd run db:local
-```
-
-In a second terminal:
-
-```powershell
-npm.cmd run db:setup
 npm test
 npm.cmd run dev
 ```
 
-The local application runs at `http://localhost:3000`. `.env.example` describes local configuration and `.env.production.example` describes AWS and SMTP production configuration.
+The local application runs at `http://localhost:3000`. Configure the same AWS DynamoDB table and SMTP variables locally and in Vercel; this keeps accounts, carts, wishlists, password recovery, and reviews consistent across both environments.
 
 ## Final Application Screenshots
 

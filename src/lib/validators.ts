@@ -56,6 +56,8 @@ export const wishlistItemSchema = z.object({
   productId: z.string().min(1, "Product is required")
 });
 
+export const productReviewSchema = z.object({ productId: z.string().min(1), rating: z.number().int().min(1).max(5), comment: z.string().trim().min(10).max(800) });
+
 export const searchParamsSchema = z.object({
   q: z.string().optional().default(""),
   category: z.string().optional().default("all"),

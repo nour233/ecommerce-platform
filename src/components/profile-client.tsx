@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { CalendarDays, CheckCircle2, KeyRound, LockKeyhole, Mail, Save, ShieldCheck, UserRound } from "lucide-react";
 import type { User } from "@/types";
+import { PasswordVisibilityToggle } from "@/components/password-visibility-toggle";
 
 type Feedback = { type: "success" | "error"; message: string } | null;
 
@@ -14,6 +15,10 @@ export function ProfileClient({ initialUser }: { initialUser: User }) {
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [profileFeedback, setProfileFeedback] = useState<Feedback>(null);
   const [passwordFeedback, setPasswordFeedback] = useState<Feedback>(null);
+  const [profilePasswordVisible, setProfilePasswordVisible] = useState(false);
+  const [currentPasswordVisible, setCurrentPasswordVisible] = useState(false);
+  const [newPasswordVisible, setNewPasswordVisible] = useState(false);
+  const [confirmationVisible, setConfirmationVisible] = useState(false);
 
   async function updateProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -117,7 +122,7 @@ export function ProfileClient({ initialUser }: { initialUser: User }) {
             <form key={`${user.name}-${user.email}`} onSubmit={updateProfile} className="mt-6 grid gap-5 sm:grid-cols-2">
               <label className="block text-sm font-semibold text-ink">Full name<span className="relative mt-2 block"><UserRound className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink/35" /><input name="name" defaultValue={user.name} minLength={2} maxLength={80} required className="focus-ring h-14 w-full rounded-md border border-ink/15 bg-white pl-12 pr-4 font-normal" /></span></label>
               <label className="block text-sm font-semibold text-ink">Email address<span className="relative mt-2 block"><Mail className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink/35" /><input name="email" type="email" defaultValue={user.email} required className="focus-ring h-14 w-full rounded-md border border-ink/15 bg-white pl-12 pr-4 font-normal" /></span></label>
-              <label className="block text-sm font-semibold text-ink sm:col-span-2">Current password <span className="font-normal text-ink/45">(required only when changing email)</span><span className="relative mt-2 block"><LockKeyhole className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink/35" /><input name="currentPassword" type="password" autoComplete="current-password" placeholder="Confirm an email change" minLength={8} className="focus-ring h-14 w-full rounded-md border border-ink/15 bg-white pl-12 pr-4 font-normal" /></span></label>
+              <label className="block text-sm font-semibold text-ink sm:col-span-2">Current password <span className="font-normal text-ink/45">(required only when changing email)</span><span className="relative mt-2 block"><LockKeyhole className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink/35" /><input name="currentPassword" type={profilePasswordVisible ? "text" : "password"} autoComplete="current-password" placeholder="Confirm an email change" minLength={8} className="focus-ring h-14 w-full rounded-md border border-ink/15 bg-white pl-12 pr-12 font-normal" /><PasswordVisibilityToggle visible={profilePasswordVisible} onToggle={() => setProfilePasswordVisible((visible) => !visible)} /></span></label>
               {profileFeedback ? <FeedbackMessage feedback={profileFeedback} /> : null}
               <div className="sm:col-span-2"><button type="submit" disabled={profileLoading} className="focus-ring inline-flex h-12 items-center gap-2 rounded-md bg-ink px-6 text-sm font-semibold text-white transition hover:bg-clay disabled:opacity-60"><Save size={16} />{profileLoading ? "Saving..." : "Save profile"}</button></div>
             </form>
@@ -129,9 +134,9 @@ export function ProfileClient({ initialUser }: { initialUser: User }) {
               <div><h2 id="password-title" className="text-2xl font-bold text-ink">Password & security</h2><p className="mt-1 text-sm text-ink/55">Use a unique password with at least eight characters.</p></div>
             </div>
             <form onSubmit={changePassword} className="mt-6 grid gap-5 sm:grid-cols-2">
-              <label className="block text-sm font-semibold text-ink sm:col-span-2">Current password<input name="currentPassword" type="password" autoComplete="current-password" minLength={8} required className="focus-ring mt-2 h-14 w-full rounded-md border border-ink/15 bg-white px-4 font-normal" /></label>
-              <label className="block text-sm font-semibold text-ink">New password<input name="newPassword" type="password" autoComplete="new-password" minLength={8} required className="focus-ring mt-2 h-14 w-full rounded-md border border-ink/15 bg-white px-4 font-normal" /></label>
-              <label className="block text-sm font-semibold text-ink">Confirm new password<input name="confirmation" type="password" autoComplete="new-password" minLength={8} required className="focus-ring mt-2 h-14 w-full rounded-md border border-ink/15 bg-white px-4 font-normal" /></label>
+              <label className="block text-sm font-semibold text-ink sm:col-span-2">Current password<span className="relative mt-2 block"><input name="currentPassword" type={currentPasswordVisible ? "text" : "password"} autoComplete="current-password" minLength={8} required className="focus-ring h-14 w-full rounded-md border border-ink/15 bg-white px-4 pr-12 font-normal" /><PasswordVisibilityToggle visible={currentPasswordVisible} onToggle={() => setCurrentPasswordVisible((visible) => !visible)} /></span></label>
+              <label className="block text-sm font-semibold text-ink">New password<span className="relative mt-2 block"><input name="newPassword" type={newPasswordVisible ? "text" : "password"} autoComplete="new-password" minLength={8} required className="focus-ring h-14 w-full rounded-md border border-ink/15 bg-white px-4 pr-12 font-normal" /><PasswordVisibilityToggle visible={newPasswordVisible} onToggle={() => setNewPasswordVisible((visible) => !visible)} /></span></label>
+              <label className="block text-sm font-semibold text-ink">Confirm new password<span className="relative mt-2 block"><input name="confirmation" type={confirmationVisible ? "text" : "password"} autoComplete="new-password" minLength={8} required className="focus-ring h-14 w-full rounded-md border border-ink/15 bg-white px-4 pr-12 font-normal" /><PasswordVisibilityToggle visible={confirmationVisible} onToggle={() => setConfirmationVisible((visible) => !visible)} /></span></label>
               {passwordFeedback ? <FeedbackMessage feedback={passwordFeedback} /> : null}
               <div className="sm:col-span-2"><button type="submit" disabled={passwordLoading} className="focus-ring inline-flex h-12 items-center gap-2 rounded-md border border-ink bg-white px-6 text-sm font-semibold text-ink transition hover:bg-ink hover:text-white disabled:opacity-60"><KeyRound size={16} />{passwordLoading ? "Updating..." : "Change password"}</button></div>
             </form>

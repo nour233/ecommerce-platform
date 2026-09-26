@@ -21,6 +21,8 @@ export type Product = {
   createdAt: string;
 };
 
+export type ProductReview = { id: string; productId: string; userId: string; authorName: string; rating: number; comment: string; createdAt: string };
+
 export type UserRole = "admin" | "customer";
 
 export type User = {
