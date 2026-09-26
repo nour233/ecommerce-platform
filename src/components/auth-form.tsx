@@ -207,7 +207,7 @@ export function AuthForm({ mode, nextPath }: AuthFormProps) {
                 name="password"
                 type={passwordVisible ? "text" : "password"}
                 autoComplete={isRegister ? "new-password" : "current-password"}
-                placeholder="At least 8 characters"
+                placeholder={isRegister ? "At least 8 characters" : "Your password"}
                 required
                 minLength={8}
                 className="focus-ring h-14 w-full rounded-md border border-ink/15 bg-white pl-12 pr-12 font-normal transition hover:border-ink/30"
@@ -217,7 +217,7 @@ export function AuthForm({ mode, nextPath }: AuthFormProps) {
             {isRegister ? (
               <span className="mt-2 flex items-center gap-2 text-xs font-normal text-ink/55">
                 <ShieldCheck className="h-3.5 w-3.5 text-moss" aria-hidden="true" />
-                Use 8 or more characters
+                Use 8+ characters with uppercase, lowercase, and a number
               </span>
             ) : null}
           </label>

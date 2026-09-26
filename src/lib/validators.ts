@@ -6,13 +6,22 @@ const emailSchema = z
   .email("Enter a valid email address")
   .transform((value) => value.toLowerCase());
 
+const strongPasswordSchema = z
+  .string()
+  .min(8, "Password must contain at least 8 characters")
+  .max(128)
+  .regex(/[a-z]/, "Password must include a lowercase letter")
+  .regex(/[A-Z]/, "Password must include an uppercase letter")
+  .regex(/\d/, "Password must include a number");
+
 export const loginSchema = z.object({
   email: emailSchema,
   password: z.string().min(8, "Password must contain at least 8 characters").max(128)
 });
 
 export const registerSchema = loginSchema.extend({
-  name: z.string().trim().min(2, "Name must contain at least 2 characters").max(80)
+  name: z.string().trim().min(2, "Name must contain at least 2 characters").max(80),
+  password: strongPasswordSchema
 });
 
 export const verificationCodeSchema = z.object({
@@ -29,7 +38,7 @@ export const passwordResetRequestSchema = z.object({
 });
 
 export const passwordResetConfirmSchema = verificationCodeSchema.extend({
-  password: z.string().min(8, "Password must contain at least 8 characters").max(128)
+  password: strongPasswordSchema
 });
 
 export const profileUpdateSchema = z.object({
@@ -40,7 +49,7 @@ export const profileUpdateSchema = z.object({
 
 export const passwordChangeSchema = z.object({
   currentPassword: z.string().min(8).max(128),
-  newPassword: z.string().min(8, "Password must contain at least 8 characters").max(128)
+  newPassword: strongPasswordSchema
 });
 
 export const cartItemSchema = z.object({

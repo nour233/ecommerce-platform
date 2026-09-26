@@ -111,7 +111,8 @@ export function PasswordResetForm() {
           </label>
           <label className="block text-sm font-semibold text-ink">
             New password
-            <span className="relative mt-2 block"><LockKeyhole className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink/35" aria-hidden="true" /><input name="password" type={passwordVisible ? "text" : "password"} autoComplete="new-password" placeholder="At least 8 characters" minLength={8} required className="focus-ring h-14 w-full rounded-md border border-ink/15 bg-white pl-12 pr-12 font-normal" /><PasswordVisibilityToggle visible={passwordVisible} onToggle={() => setPasswordVisible((visible) => !visible)} /></span>
+            <span className="relative mt-2 block"><LockKeyhole className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink/35" aria-hidden="true" /><input name="password" type={passwordVisible ? "text" : "password"} autoComplete="new-password" placeholder="8+ characters, uppercase, lowercase, number" minLength={8} required className="focus-ring h-14 w-full rounded-md border border-ink/15 bg-white pl-12 pr-12 font-normal" /><PasswordVisibilityToggle visible={passwordVisible} onToggle={() => setPasswordVisible((visible) => !visible)} /></span>
+            <span className="mt-2 block text-xs font-normal text-ink/55">Use 8+ characters with uppercase, lowercase, and a number.</span>
           </label>
           <label className="block text-sm font-semibold text-ink">
             Confirm new password
