@@ -6,6 +6,10 @@ import { useRef, useState } from "react";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+// Unsigned upload presets and cloud names are intentionally public client configuration.
+// Environment variables can override these values in each deployment.
+const DEFAULT_CLOUD_NAME = "tbqkgomc";
+const DEFAULT_UPLOAD_PRESET = "commercecraft_uploads";
 
 type CloudinaryImageFieldProps = {
   value: string;
@@ -19,12 +23,8 @@ export function CloudinaryImageField({ value, onChange, inputClassName }: Cloudi
   const [error, setError] = useState<string | null>(null);
 
   async function upload(file: File) {
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
-    if (!cloudName || !uploadPreset) {
-      setError("Cloudinary is not configured yet. Add the cloud name and unsigned upload preset first.");
-      return;
-    }
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || DEFAULT_CLOUD_NAME;
+    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || DEFAULT_UPLOAD_PRESET;
     if (!ACCEPTED_TYPES.includes(file.type)) {
       setError("Choose a JPG, PNG, or WebP image.");
       return;
