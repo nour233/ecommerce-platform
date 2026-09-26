@@ -237,7 +237,7 @@ The application includes the following main views:
 - Authenticated cart with quantity management and calculated subtotal
 - Authenticated wishlist with persistent saved products
 
-## Deployment and Submission
+## Deployment
 
 ### Deploy to Vercel and AWS
 
@@ -271,4 +271,4 @@ npm.cmd run admin:promote -- your-admin-email@example.com
 7. Every later push to the `main` branch creates a new production deployment.
 When changing an environment variable in Vercel, redeploy so the server uses it.
 
-Submit the GitHub repository URL, live deployment URL, this README, and final application screenshots through the Internship Dashboard.
+The repository contains the application source code, technical documentation, and deployment configuration.
