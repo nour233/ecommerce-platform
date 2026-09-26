@@ -108,22 +108,26 @@ async function ensureTimeToLive() {
 }
 
 async function writeAll(items) {
-  let pending = items.map((Item) => ({ PutRequest: { Item } }));
+  for (let offset = 0; offset < items.length; offset += 25) {
+    let pending = items
+      .slice(offset, offset + 25)
+      .map((Item) => ({ PutRequest: { Item } }));
 
-  for (let attempt = 1; pending.length > 0 && attempt <= 6; attempt += 1) {
-    const result = await documentClient.send(
-      new BatchWriteCommand({
-        RequestItems: { [tableName]: pending }
-      })
-    );
-    pending = result.UnprocessedItems?.[tableName] ?? [];
-    if (pending.length > 0) {
-      await new Promise((resolve) => setTimeout(resolve, attempt * 250));
+    for (let attempt = 1; pending.length > 0 && attempt <= 6; attempt += 1) {
+      const result = await documentClient.send(
+        new BatchWriteCommand({
+          RequestItems: { [tableName]: pending }
+        })
+      );
+      pending = result.UnprocessedItems?.[tableName] ?? [];
+      if (pending.length > 0) {
+        await new Promise((resolve) => setTimeout(resolve, attempt * 250));
+      }
     }
-  }
 
-  if (pending.length > 0) {
-    throw new Error(`DynamoDB did not process ${pending.length} catalog records.`);
+    if (pending.length > 0) {
+      throw new Error(`DynamoDB did not process ${pending.length} catalog records.`);
+    }
   }
 }
 
