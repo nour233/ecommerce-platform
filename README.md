@@ -229,13 +229,13 @@ npm run build
 
 ## Screenshots
 
-Add final screenshots here before submission after connecting the deployed application to DynamoDB:
+The application includes the following main views:
 
-- Homepage
-- Product listing and filters
-- Product detail
-- Cart
-- Wishlist
+- Responsive homepage with featured collections and products
+- Product catalog with dynamic search, category, price, and sort filters
+- Product detail page with stock, tags, cart actions, wishlist actions, and related products
+- Authenticated cart with quantity management and calculated subtotal
+- Authenticated wishlist with persistent saved products
 
 ## Deployment and Submission
 
