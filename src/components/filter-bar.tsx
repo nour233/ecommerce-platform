@@ -79,14 +79,17 @@ export function FilterBar({ categories, defaults, resultCount }: FilterBarProps)
         </label>
         <p role="status" className="flex h-12 min-w-28 items-center justify-center gap-2 rounded-md bg-[#172033] px-4 text-sm font-semibold text-white">
           <LoaderCircle size={15} className={clsx("motion-safe:animate-spin", !(pending || typing) && "hidden")} />
-          <span key={pending || typing ? "loading" : `results-${resultCount}`}>{pending || typing ? "Loading" : `${resultCount} items`}</span>
+          <span className={pending || typing ? "inline" : "hidden"}>Loading</span>
+          <span className={pending || typing ? "hidden" : "inline"}>
+            <span translate="no">{resultCount}</span> <span>items</span>
+          </span>
         </p>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
         <span className="mr-1 text-xs font-semibold uppercase text-slate-400">Collections</span>
         {[{ id: "all", name: "All" }, ...categories].map((category) => (
           <button key={category.id} type="button" aria-pressed={filters.category === category.id} onClick={() => update({ ...filters, category: category.id })} className={clsx("inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition", filters.category === category.id ? "border-emerald-700 bg-emerald-700 text-white" : "border-slate-200 bg-white text-slate-600 hover:border-slate-400 hover:text-slate-950")}>
-            {filters.category === category.id ? <Check size={13} aria-hidden="true" /> : null}{category.name}
+            <Check size={13} aria-hidden="true" className={filters.category === category.id ? "block" : "hidden"} /><span>{category.name}</span>
           </button>
         ))}
         <button type="button" aria-pressed={filters.min === "" && filters.max === "50"} onClick={() => update({ ...filters, min: "", max: "50" })} className={clsx("min-h-9 rounded-full border px-3.5 text-sm font-medium transition", filters.min === "" && filters.max === "50" ? "border-[#e76f51] bg-[#e76f51] text-white" : "border-[#e76f51]/25 bg-[#fff3ed] text-[#b84f34] hover:border-[#e76f51]")}>Under $50</button>

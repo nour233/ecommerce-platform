@@ -20,7 +20,7 @@ CommerceCraft is a production-style full-stack e-commerce application built for 
 ## Tech Stack
 
 - Frontend: Next.js 15, React 19, TypeScript
-- Backend: Next.js Route Handlers and server-side services
+- Backend: Next.js Route Handlers, API routes, server actions, and server-side services
 - Database: AWS DynamoDB with the AWS SDK for JavaScript v3
 - Styling: Tailwind CSS
 - Validation: Zod
@@ -64,10 +64,10 @@ CommerceCraft uses one table named `CommerceCraft` by default. It has a string p
 
 | Entity | Partition key (`pk`) | Sort key (`sk`) |
 | --- | --- | --- |
-| User | `USER#{sha256(email)}` | `PROFILE` |
-| Email lookup | `EMAIL#{sha256(email)}` | `LOOKUP` |
-| Pending registration | `VERIFICATION#{sha256(email)}` | `REGISTRATION` |
-| Pending password reset | `PASSWORD_RESET#{userId}` | `VERIFICATION` |
+| User | `USER#{sha256(normalizedEmail)}` | `PROFILE` |
+| Email lookup | `EMAIL#{normalizedEmail}` | `USER` |
+| Pending registration | `VERIFICATION#{sha256(normalizedEmail)}` | `REGISTRATION` |
+| Pending password reset | `PASSWORD_RESET#{userId}` | `PASSWORD_RESET` |
 | Product | `PRODUCTS` | `PRODUCT#{productId}` |
 | Category | `CATEGORIES` | `CATEGORY#{categoryId}` |
 | Cart item | `USER#{userId}` | `CART#{productId}` |
@@ -198,6 +198,7 @@ The AWS SDK uses its standard credential provider chain, so local AWS CLI profil
 | `POST /api/auth/register/resend` | Send a replacement verification code |
 | `POST /api/auth/login` | Authenticate and create a session |
 | `POST /api/auth/logout` | Clear the session |
+| Server Action `logoutAction` | Clear the session through the logout form without a client-side API call |
 | `GET /api/auth/session` | Read the current session user |
 | `POST /api/auth/password-reset/request` | Email a password recovery code without exposing account existence |
 | `POST /api/auth/password-reset/confirm` | Verify the recovery code and replace the password |
