@@ -92,7 +92,7 @@ CommerceCraft uses one table named `CommerceCraft` by default. It has a string p
 
 Products are joined to cart and wishlist records in the service layer. User passwords are never stored in plain text; each password is hashed with Node.js `scrypt` and a unique random salt.
 
-User profiles store a `role` of `customer` or `admin`. New registrations are customers. Admin pages and mutation APIs verify the role on the server, so hiding the dashboard link is not the security boundary. To bootstrap an administrator after registration, run:
+User profiles store a `role` of `customer` or `admin`. New registrations are customers. Admin pages and mutation APIs verify the role on the server, so hiding the dashboard link is not the security boundary. Administrator promotion is available through the following maintenance command:
 
 ```powershell
 npm.cmd run admin:promote -- user@example.com
@@ -100,75 +100,13 @@ npm.cmd run admin:promote -- user@example.com
 
 Pending registrations store only a password hash and an HMAC of the six-digit code. Password recovery records also store only an HMAC of the reset code. Codes expire after 10 minutes, verification is limited to five attempts, and AWS deployments enable DynamoDB TTL on `expiresAtEpoch` to clean up abandoned flows.
 
-## Local Development with NoSQL Workbench
+## Runtime Configuration
 
-Use DynamoDB Local for development on Windows. This uses the DynamoDB SDK and
-database records, not the in-memory mock store.
+Local development uses DynamoDB Local through the AWS SDK, with persistent data stored in `.local/dynamodb`. The local environment uses `DYNAMODB_ENDPOINT=http://127.0.0.1:8000` and `USE_MOCK_DB=false`; Java and DynamoDB Local from NoSQL Workbench provide the local database runtime.
 
-Set DYNAMODB_ENDPOINT=http://127.0.0.1:8000 and USE_MOCK_DB=false in .env.local.
-Start the database with `npm.cmd run db:local` in one terminal. Java and Workbench
-with DynamoDB Local must be installed. If Workbench already runs a database on
-port 8000, use that instance instead of starting another one.
+The relevant local commands are `npm.cmd run db:local`, `npm.cmd run db:setup`, and `npm.cmd run dev`. The setup script is idempotent: it creates the table when needed and seeds products and categories without removing existing users.
 
-This command stores persistent data in .local/dynamodb (ignored by Git), uses a
-shared database, and finds Java in JAVA_HOME, PATH, or an installed JetBrains
-runtime. Set DYNAMODB_LOCAL_JAR for a custom Workbench installation path.
-Keep the database terminal open. In a second terminal run `npm.cmd run db:setup`
-once to initialize the catalog, then `npm.cmd run dev`. Open http://localhost:3000.
-Re-running setup overwrites seeded catalog records but does not delete users.
-
-To view data: Workbench -> Operation builder -> Add connection -> Local ->
-port 8000 -> Connect -> Open -> CommerceCraft. The Models area is for designing
-models; use Operation builder to see live records. Users, cart and wishlist
-records appear when you register and use the site.
-
-For AWS deployment, remove DYNAMODB_ENDPOINT and configure an AWS identity using
-the instructions below. Local and cloud databases are separate; local records
-are not automatically uploaded to AWS.
-
-## AWS DynamoDB Setup
-
-Prerequisites: Node.js 20 or newer, an AWS account, AWS CLI credentials with DynamoDB permissions, and npm.
-
-1. Configure your AWS credentials locally. Do not put real credentials in Git.
-
-```bash
-aws configure
-```
-
-2. Create a production-only environment file. It is ignored by Git and keeps the
-cloud settings separate from DynamoDB Local.
-
-```powershell
-Copy-Item .env.production.example .env.production.local
-```
-
-3. Replace `SESSION_SECRET` in `.env.production.local` with a long random value.
-Keep `USE_MOCK_DB=false` and leave `DYNAMODB_ENDPOINT` absent for AWS.
-
-4. Configure the AWS access key values plus `SMTP_*` and `MAIL_FROM` in
-`.env.production.local`. Registration creates an account only after the user
-enters the six-digit code delivered by email.
-
-5. Install dependencies, create the table, and seed products and categories.
-
-```bash
-npm install
-$env:ENV_FILE = ".env.production.local"
-npm.cmd run db:setup
-```
-
-`db:setup` is idempotent: it reuses the table if it already exists and safely writes the catalog seed records.
-
-6. Start the application.
-
-```bash
-npm run dev
-```
-
-Open `http://localhost:3000` and register a new account. That user, their cart, and their wishlist will be stored in DynamoDB.
-
-On Windows PowerShell systems that block `npm.ps1`, use `npm.cmd run db:setup` and `npm.cmd run dev`.
+Cloud environments use AWS DynamoDB with `DYNAMODB_ENDPOINT` absent, an IAM identity restricted to the application table, and values from `.env.production.example`. Local and cloud databases are separate. The production database setup uses `ENV_FILE=.env.production.local` together with `npm.cmd run db:setup`.
 
 ## Environment Variables
 
@@ -177,15 +115,15 @@ On Windows PowerShell systems that block `npm.ps1`, use `npm.cmd run db:setup` a
 | `AWS_REGION` | Yes | AWS region containing the table |
 | `DYNAMODB_TABLE_NAME` | Yes | DynamoDB table name |
 | `SESSION_SECRET` | Yes | Signs seven-day HTTP-only session cookies |
-| `USE_MOCK_DB` | Yes | Keep `false` for AWS DynamoDB; `true` is only an optional offline development fallback |
+| `USE_MOCK_DB` | Yes | `false` for AWS DynamoDB; `true` is an optional offline development fallback |
 | `SMTP_HOST` | Yes | SMTP server hostname |
 | `SMTP_PORT` | Yes | SMTP port, usually `587` for STARTTLS or `465` for TLS |
-| `SMTP_SECURE` | Yes | Use `true` for port `465`; otherwise `false` |
+| `SMTP_SECURE` | Yes | `true` for port `465`; otherwise `false` |
 | `SMTP_USER` | Yes | SMTP account username |
 | `SMTP_PASS` | Yes | SMTP password or provider app password |
 | `MAIL_FROM` | Yes | Sender displayed on verification emails |
 | `AWS_ACCESS_KEY_ID` | Host-dependent | Prefer the AWS CLI profile locally or the deployment platform's secret manager |
-| `AWS_SECRET_ACCESS_KEY` | Host-dependent | Never commit this value |
+| `AWS_SECRET_ACCESS_KEY` | Host-dependent | Stored only in the local environment or deployment secret manager |
 
 The AWS SDK uses its standard credential provider chain, so local AWS CLI profiles and IAM roles work without hardcoding keys.
 
@@ -239,36 +177,8 @@ The application includes the following main views:
 
 ## Deployment
 
-### Deploy to Vercel and AWS
+The production topology is Vercel for the Next.js runtime and AWS DynamoDB for persistent data. Vercel receives the production environment variables `AWS_REGION`, `DYNAMODB_TABLE_NAME`, `USE_MOCK_DB`, `SESSION_SECRET`, `SMTP_*`, `MAIL_FROM`, `AWS_ACCESS_KEY_ID`, and `AWS_SECRET_ACCESS_KEY`; `DYNAMODB_ENDPOINT` remains absent because localhost is only available during local development.
 
-The deployed site must use **AWS DynamoDB**, not the local Workbench database.
-Vercel cannot reach `http://127.0.0.1:8000`.
-
-1. Create an AWS account and choose one region (for example `eu-west-1`). Create
-an IAM identity with DynamoDB access restricted to the `CommerceCraft` table.
-Create an access key for that identity. Keep the secret outside Git and do not
-paste it into source files.
-2. Follow the **AWS DynamoDB Setup** section above. In PowerShell, use
-`.env.production.local` and run `npm.cmd run db:setup` once. This creates the
-cloud table, enables TTL for verification codes, and seeds categories/products.
-3. Go to [Vercel](https://vercel.com/new), sign in with GitHub, and import
-`nour233/ecommerce-platform`. Vercel detects Next.js automatically.
-4. Before deploying, open the project's **Environment Variables** section and
-add the values from `.env.production.local`: `AWS_REGION`,
-`DYNAMODB_TABLE_NAME`, `USE_MOCK_DB`, `SESSION_SECRET`, all `SMTP_*` variables,
-`MAIL_FROM`, `AWS_ACCESS_KEY_ID`, and `AWS_SECRET_ACCESS_KEY`. Do **not** add
-`DYNAMODB_ENDPOINT`.
-5. Deploy. Copy the generated `https://...vercel.app` URL and test registration,
-email verification, login, products, cart, wishlist, and admin access.
-6. After registering the first cloud user, promote that account using the same
-production file:
-
-```powershell
-$env:ENV_FILE = ".env.production.local"
-npm.cmd run admin:promote -- your-admin-email@example.com
-```
-
-7. Every later push to the `main` branch creates a new production deployment.
-When changing an environment variable in Vercel, redeploy so the server uses it.
+The cloud table is created and seeded by `npm.cmd run db:setup` with the production environment file. DynamoDB TTL cleans up expired email-verification and password-recovery records. Deployments are produced from the `main` branch of the GitHub repository.
 
 The repository contains the application source code, technical documentation, and deployment configuration.
