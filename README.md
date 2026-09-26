@@ -127,6 +127,8 @@ npm test
 npm.cmd run dev
 ```
 
+`npm test` runs six automated checks for cart and wishlist behavior as well as important data-validation rules.
+
 The local application runs at `http://localhost:3000`. Configure the same AWS DynamoDB table and SMTP variables locally and in Vercel; this keeps accounts, carts, wishlists, password recovery, and reviews consistent across both environments.
 
 ## Final Application Screenshots
