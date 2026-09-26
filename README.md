@@ -6,7 +6,7 @@ CommerceCraft is a full-stack e-commerce application. Visitors can browse a cata
 
 ## Features
 
-- Responsive homepage with featured collections and products
+- Responsive interface for mobile, tablet, and desktop, with featured collections and products
 - Categories, product catalog, product details, and related products
 - Dynamic search, category and price filters, and product sorting
 - Registration, login, logout, and signed sessions
