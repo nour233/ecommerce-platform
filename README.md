@@ -78,9 +78,9 @@ CommerceCraft uses one table named `CommerceCraft` by default. It has a string p
 | Operation | DynamoDB access |
 | --- | --- |
 | Register/read a user | Conditional `PutItem` and `GetItem` using `USER#... / PROFILE` |
-| Find or update a profile by email | `GetItem` using `EMAIL#... / LOOKUP`, then the stable user ID |
+| Find or update a profile by email | `GetItem` using `EMAIL#{normalizedEmail} / USER`, then the user ID |
 | Request/verify registration | `PutItem`, `GetItem`, and `DeleteItem` using `VERIFICATION#... / REGISTRATION` |
-| Request/verify password reset | `PutItem`, `GetItem`, and `DeleteItem` using `PASSWORD_RESET#... / VERIFICATION` |
+| Request/verify password reset | `PutItem`, `GetItem`, and `DeleteItem` using `PASSWORD_RESET#{userId} / PASSWORD_RESET` |
 | List/read products | `Query` on `PRODUCTS`, or `GetItem` using the product sort key |
 | List categories | `Query` on `CATEGORIES` |
 | Read a user's cart | `Query` on `USER#{userId}` with sort-key prefix `CART#` |
