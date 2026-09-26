@@ -30,14 +30,14 @@ CommerceCraft is a production-style full-stack e-commerce application built for 
 
 ```text
 User
-  -> Next.js pages and React components
-  -> Route Handlers (/api/*)
+  -> Next.js application and React UI components
+  -> server pages, Server Actions, and Route Handlers (/api/*)
   -> validation and business services
   -> repositories
   -> AWS DynamoDB
 ```
 
-The browser never accesses DynamoDB directly. Route Handlers validate incoming data and identify the authenticated user. Services apply business rules such as stock limits, subtotal calculation, and wishlist uniqueness. Repositories own all database access, keeping AWS-specific code out of UI and business logic.
+The browser never accesses DynamoDB directly. UI components present data and invoke server endpoints. Server pages, Route Handlers, and Server Actions form the server/API layer. Services apply business rules such as stock limits, subtotal calculation, and wishlist uniqueness. Repositories own database access, keeping AWS-specific code out of UI and business logic. Shared types and utility modules provide consistent validation, authentication, configuration, error handling, and email delivery.
 
 ## Project Structure
 
@@ -45,14 +45,18 @@ The browser never accesses DynamoDB directly. Route Handlers validate incoming d
 scripts/
   setup-dynamodb.mjs       Create the AWS table and seed catalog data
 src/
-  app/                     Pages, loading/not-found states, and API routes
+  app/
+    actions/               Server Actions
+    api/                   Route Handlers and API endpoints
+    ...                    Pages, loading, error, and not-found states
   components/              Reusable UI and client interaction components
   lib/
     data/                  Catalog seed data
     db/                    DynamoDB client and single-table keys
     repositories/          Database CRUD operations
-    services/              Authentication, catalog, cart, and wishlist logic
-    auth.ts                Password hashing and signed sessions
+    services/              Business logic for auth, catalog, cart, wishlist, and admin
+    api.ts, auth.ts        Server utilities for authorization and signed sessions
+    env.ts, errors.ts      Environment configuration and structured error handling
     mail.ts                SMTP delivery for registration and password reset codes
     validators.ts          Zod request schemas
   types/                   Shared domain interfaces
