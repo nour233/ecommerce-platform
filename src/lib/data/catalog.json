@@ -20,6 +20,27 @@
       "name": "Daily Style",
       "description": "Reliable essentials with polished materials.",
       "imageUrl": "https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=1200&q=80"
+    },
+    {
+      "id": "cat-outdoor",
+      "slug": "outdoor-travel",
+      "name": "Outdoor & Travel",
+      "description": "Dependable gear for weekends away and everyday adventures.",
+      "imageUrl": "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80"
+    },
+    {
+      "id": "cat-wellness",
+      "slug": "wellness",
+      "name": "Wellness",
+      "description": "Thoughtful essentials for movement, recovery, and calm routines.",
+      "imageUrl": "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=1200&q=80"
+    },
+    {
+      "id": "cat-office",
+      "slug": "workspace",
+      "name": "Workspace",
+      "description": "Practical tools for a more focused and comfortable desk.",
+      "imageUrl": "https://images.unsplash.com/photo-1497215842964-222b430dc094?auto=format&fit=crop&w=1200&q=80"
     }
   ],
   "products": [
@@ -106,6 +127,90 @@
       "imageUrl": "https://images.unsplash.com/photo-1525507119028-ed4c629a60a3?auto=format&fit=crop&w=1200&q=80",
       "tags": ["apparel", "travel", "comfort"],
       "createdAt": "2026-04-22T00:00:00.000Z"
+    },
+    {
+      "id": "prod-07",
+      "slug": "explorer-trail-backpack",
+      "name": "Explorer Trail Backpack",
+      "description": "A weather-ready daypack with padded straps, a laptop sleeve, and organized pockets for trips near or far.",
+      "categoryId": "cat-outdoor",
+      "categoryName": "Outdoor & Travel",
+      "price": 118,
+      "rating": 4.7,
+      "stock": 24,
+      "imageUrl": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=1200&q=80",
+      "tags": ["backpack", "travel", "outdoor"],
+      "createdAt": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "prod-08",
+      "slug": "insulated-trail-bottle",
+      "name": "Insulated Trail Bottle",
+      "description": "A durable stainless-steel bottle that keeps drinks cold for long days outdoors and fits standard cup holders.",
+      "categoryId": "cat-outdoor",
+      "categoryName": "Outdoor & Travel",
+      "price": 32,
+      "rating": 4.5,
+      "stock": 48,
+      "imageUrl": "https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=1200&q=80",
+      "tags": ["bottle", "hydration", "travel"],
+      "createdAt": "2026-09-12T00:00:00.000Z"
+    },
+    {
+      "id": "prod-09",
+      "slug": "cork-balance-yoga-mat",
+      "name": "Cork Balance Yoga Mat",
+      "description": "A supportive cork-surface yoga mat with dependable grip and a cushioned base for daily movement.",
+      "categoryId": "cat-wellness",
+      "categoryName": "Wellness",
+      "price": 74,
+      "rating": 4.8,
+      "stock": 31,
+      "imageUrl": "https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?auto=format&fit=crop&w=1200&q=80",
+      "tags": ["yoga", "movement", "cork"],
+      "createdAt": "2026-09-10T00:00:00.000Z"
+    },
+    {
+      "id": "prod-10",
+      "slug": "recovery-massage-roller",
+      "name": "Recovery Massage Roller",
+      "description": "A textured foam roller designed to support warmups, muscle recovery, and flexible training routines.",
+      "categoryId": "cat-wellness",
+      "categoryName": "Wellness",
+      "price": 38,
+      "rating": 4.4,
+      "stock": 42,
+      "imageUrl": "https://images.unsplash.com/photo-1598289431512-b97b0917affc?auto=format&fit=crop&w=1200&q=80",
+      "tags": ["recovery", "fitness", "wellness"],
+      "createdAt": "2026-09-08T00:00:00.000Z"
+    },
+    {
+      "id": "prod-11",
+      "slug": "walnut-monitor-stand",
+      "name": "Walnut Monitor Stand",
+      "description": "A solid walnut riser that lifts your screen to a comfortable height and keeps desk essentials neatly stored.",
+      "categoryId": "cat-office",
+      "categoryName": "Workspace",
+      "price": 89,
+      "rating": 4.6,
+      "stock": 19,
+      "imageUrl": "https://images.unsplash.com/photo-1593642532744-d377ab507dc8?auto=format&fit=crop&w=1200&q=80",
+      "tags": ["desk", "monitor", "wood"],
+      "createdAt": "2026-09-06T00:00:00.000Z"
+    },
+    {
+      "id": "prod-12",
+      "slug": "precision-wireless-mouse",
+      "name": "Precision Wireless Mouse",
+      "description": "A quiet ergonomic mouse with adjustable tracking, reliable wireless pairing, and all-day comfort.",
+      "categoryId": "cat-office",
+      "categoryName": "Workspace",
+      "price": 58,
+      "rating": 4.5,
+      "stock": 35,
+      "imageUrl": "https://images.unsplash.com/photo-1527814050087-3793815479db?auto=format&fit=crop&w=1200&q=80",
+      "tags": ["mouse", "wireless", "office"],
+      "createdAt": "2026-09-04T00:00:00.000Z"
     }
   ]
 }
