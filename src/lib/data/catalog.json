@@ -41,6 +41,20 @@
       "name": "Workspace",
       "description": "Practical tools for a more focused and comfortable desk.",
       "imageUrl": "https://images.unsplash.com/photo-1497215842964-222b430dc094?auto=format&fit=crop&w=1200&q=80"
+    },
+    {
+      "id": "cat-kitchen",
+      "slug": "kitchen-dining",
+      "name": "Kitchen & Dining",
+      "description": "Well-made pieces for relaxed cooking, serving, and daily rituals.",
+      "imageUrl": "https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=1200&q=80"
+    },
+    {
+      "id": "cat-pets",
+      "slug": "pet-essentials",
+      "name": "Pet Essentials",
+      "description": "Comfortable, useful favorites for pets and their people.",
+      "imageUrl": "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=1200&q=80"
     }
   ],
   "products": [
@@ -211,6 +225,62 @@
       "imageUrl": "https://images.unsplash.com/photo-1527814050087-3793815479db?auto=format&fit=crop&w=1200&q=80",
       "tags": ["mouse", "wireless", "office"],
       "createdAt": "2026-09-04T00:00:00.000Z"
+    },
+    {
+      "id": "prod-13",
+      "slug": "brew-ritual-coffee-set",
+      "name": "Brew Ritual Coffee Set",
+      "description": "A refined pour-over coffee set with a glass carafe, reusable filter, and two stoneware cups for slow mornings.",
+      "categoryId": "cat-kitchen",
+      "categoryName": "Kitchen & Dining",
+      "price": 68,
+      "rating": 4.7,
+      "stock": 27,
+      "imageUrl": "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1200&q=80",
+      "tags": ["coffee", "kitchen", "gift"],
+      "createdAt": "2026-09-16T00:00:00.000Z"
+    },
+    {
+      "id": "prod-14",
+      "slug": "stoneware-serving-bowl",
+      "name": "Stoneware Serving Bowl",
+      "description": "A generously sized hand-finished bowl for salads, shared meals, and a table setting that feels considered.",
+      "categoryId": "cat-kitchen",
+      "categoryName": "Kitchen & Dining",
+      "price": 46,
+      "rating": 4.5,
+      "stock": 33,
+      "imageUrl": "https://images.unsplash.com/photo-1610701596007-11502861dcfa?auto=format&fit=crop&w=1200&q=80",
+      "tags": ["dining", "stoneware", "serveware"],
+      "createdAt": "2026-09-15T00:00:00.000Z"
+    },
+    {
+      "id": "prod-15",
+      "slug": "cloud-rest-pet-bed",
+      "name": "Cloud Rest Pet Bed",
+      "description": "A plush, washable pet bed with supportive bolsters and a calm neutral finish for any room.",
+      "categoryId": "cat-pets",
+      "categoryName": "Pet Essentials",
+      "price": 72,
+      "rating": 4.8,
+      "stock": 21,
+      "imageUrl": "https://images.unsplash.com/photo-1558788353-f76d92427f16?auto=format&fit=crop&w=1200&q=80",
+      "tags": ["pet", "dog", "comfort"],
+      "createdAt": "2026-09-13T00:00:00.000Z"
+    },
+    {
+      "id": "prod-16",
+      "slug": "everyday-pet-travel-bowl",
+      "name": "Everyday Pet Travel Bowl",
+      "description": "A lightweight collapsible bowl for walks, road trips, and reliable hydration wherever your pet goes.",
+      "categoryId": "cat-pets",
+      "categoryName": "Pet Essentials",
+      "price": 24,
+      "rating": 4.4,
+      "stock": 56,
+      "imageUrl": "https://images.unsplash.com/photo-1587300003388-59208cc962cb?auto=format&fit=crop&w=1200&q=80",
+      "tags": ["pet", "travel", "bowl"],
+      "createdAt": "2026-09-11T00:00:00.000Z"
     }
   ]
 }
