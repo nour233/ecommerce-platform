@@ -1,188 +1,139 @@
 # CommerceCraft
 
-CommerceCraft is a production-style full-stack e-commerce application built for a Software Engineering internship project. Customers can browse and search a responsive catalog, create an account, and manage a persistent cart and wishlist. The application uses a typed Next.js server layer and stores application data in AWS DynamoDB.
+## Project Overview
+
+CommerceCraft is a full-stack e-commerce application. Visitors can browse a catalog, search and filter products, create an account with email verification, manage a cart and wishlist, and access administration features according to their role.
 
 ## Features
 
-- Responsive homepage, category pages, product listing, and product detail pages
-- Search, category and price filters, sorting, and related products
-- User registration, login, logout, password hashing, and signed HTTP-only sessions
-- Email verification with expiring one-time codes before account creation
-- Password recovery by email with expiring, attempt-limited one-time codes
-- Protected member profile with editable name, email, and password
-- Role-based access control with a protected administration dashboard
-- Admin CRUD for products and categories, plus user role and account management
-- Persistent per-user cart with quantity updates, removal, stock validation, and subtotal calculation
-- Persistent per-user wishlist with duplicate prevention
-- Loading, empty, validation, API error, and not-found states
-- Reusable TypeScript components and a separated service/repository architecture
+- Responsive homepage with featured collections and products
+- Categories, product catalog, product details, and related products
+- Dynamic search, category and price filters, and product sorting
+- Registration, login, logout, and signed sessions
+- Six-digit email verification before account creation
+- Email-based password recovery
+- Editable user profile
+- Persistent cart with quantity controls, stock validation, and subtotal calculation
+- Persistent wishlist with duplicate prevention
+- Administrator dashboard for products, categories, and users
+- Loading, empty, validation, error, and not-found states
 
-## Tech Stack
+## Technologies Used
 
-- Frontend: Next.js 15, React 19, TypeScript
-- Backend: Next.js Route Handlers, API routes, server actions, and server-side services
-- Database: AWS DynamoDB with the AWS SDK for JavaScript v3
-- Styling: Tailwind CSS
-- Validation: Zod
-- Version control: Git and GitHub
+### Frontend
+
+- Next.js 15
+- React 19
+- TypeScript
+
+### Backend
+
+- Next.js Route Handlers
+- API Routes
+- Server Actions
+- Server-side business services
+
+### Database
+
+- AWS DynamoDB
+- AWS SDK for JavaScript v3
+
+### Styling
+
+- Tailwind CSS
+
+### Source Control
+
+- Git
+- GitHub
+
+## Project Structure
+
+```text
+scripts/
+  setup-dynamodb.mjs       Table creation and catalog seeding
+src/
+  app/
+    actions/               Server Actions
+    api/                   Route Handlers and API endpoints
+    ...                    Pages, loading, error, and not-found states
+  components/              Reusable UI components
+  lib/
+    data/                  Catalog seed data
+    db/                    DynamoDB client and key definitions
+    repositories/          DynamoDB CRUD operations
+    services/              Business logic
+    api.ts, auth.ts        Authorization and sessions
+    env.ts, errors.ts      Configuration and error handling
+    mail.ts                Email delivery
+    validators.ts          Zod validation schemas
+  types/                   Shared types and interfaces
+```
 
 ## Architecture
 
 ```text
 User
   -> Next.js application and React UI components
-  -> server pages, Server Actions, and Route Handlers (/api/*)
-  -> validation and business services
-  -> repositories
+  -> Server pages, Server Actions, and API Route Handlers
+  -> Validation and business services
+  -> Repositories
   -> AWS DynamoDB
 ```
 
-The browser never accesses DynamoDB directly. UI components present data and invoke server endpoints. Server pages, Route Handlers, and Server Actions form the server/API layer. Services apply business rules such as stock limits, subtotal calculation, and wishlist uniqueness. Repositories own database access, keeping AWS-specific code out of UI and business logic. Shared types and utility modules provide consistent validation, authentication, configuration, error handling, and email delivery.
+UI components never access DynamoDB directly. Services apply business rules, repositories isolate database operations, and shared types and utilities keep application behavior consistent.
 
-## Project Structure
+## DynamoDB Configuration
 
-```text
-scripts/
-  setup-dynamodb.mjs       Create the AWS table and seed catalog data
-src/
-  app/
-    actions/               Server Actions
-    api/                   Route Handlers and API endpoints
-    ...                    Pages, loading, error, and not-found states
-  components/              Reusable UI and client interaction components
-  lib/
-    data/                  Catalog seed data
-    db/                    DynamoDB client and single-table keys
-    repositories/          Database CRUD operations
-    services/              Business logic for auth, catalog, cart, wishlist, and admin
-    api.ts, auth.ts        Server utilities for authorization and signed sessions
-    env.ts, errors.ts      Environment configuration and structured error handling
-    mail.ts                SMTP delivery for registration and password reset codes
-    validators.ts          Zod request schemas
-  types/                   Shared domain interfaces
-```
+The application uses one DynamoDB table named `CommerceCraft`, with `pk` and `sk` as primary key attributes.
 
-## DynamoDB Design
-
-CommerceCraft uses one table named `CommerceCraft` by default. It has a string partition key named `pk` and a string sort key named `sk`. On-demand billing is used so no read/write capacity needs to be provisioned.
-
-| Entity | Partition key (`pk`) | Sort key (`sk`) |
+| Data | Partition key | Sort key |
 | --- | --- | --- |
-| User | `USER#{sha256(normalizedEmail)}` | `PROFILE` |
-| Email lookup | `EMAIL#{normalizedEmail}` | `USER` |
-| Pending registration | `VERIFICATION#{sha256(normalizedEmail)}` | `REGISTRATION` |
-| Pending password reset | `PASSWORD_RESET#{userId}` | `PASSWORD_RESET` |
+| User | `USER#{userId}` | `PROFILE` |
 | Product | `PRODUCTS` | `PRODUCT#{productId}` |
 | Category | `CATEGORIES` | `CATEGORY#{categoryId}` |
 | Cart item | `USER#{userId}` | `CART#{productId}` |
 | Wishlist item | `USER#{userId}` | `WISHLIST#{productId}` |
 
-### Access Patterns and CRUD
-
-| Operation | DynamoDB access |
-| --- | --- |
-| Register/read a user | Conditional `PutItem` and `GetItem` using `USER#... / PROFILE` |
-| Find or update a profile by email | `GetItem` using `EMAIL#{normalizedEmail} / USER`, then the user ID |
-| Request/verify registration | `PutItem`, `GetItem`, and `DeleteItem` using `VERIFICATION#... / REGISTRATION` |
-| Request/verify password reset | `PutItem`, `GetItem`, and `DeleteItem` using `PASSWORD_RESET#{userId} / PASSWORD_RESET` |
-| List/read products | `Query` on `PRODUCTS`, or `GetItem` using the product sort key |
-| List categories | `Query` on `CATEGORIES` |
-| Read a user's cart | `Query` on `USER#{userId}` with sort-key prefix `CART#` |
-| Add/update a cart item | `PutItem` at `USER#{userId} / CART#{productId}` |
-| Remove a cart item | `DeleteItem` using the cart item's full key |
-| Read a user's wishlist | `Query` with sort-key prefix `WISHLIST#` |
-| Add a wishlist item | Conditional `PutItem`; the composite key prevents duplicates |
-| Remove a wishlist item | `DeleteItem` using the wishlist item's full key |
-
-Products are joined to cart and wishlist records in the service layer. User passwords are never stored in plain text; each password is hashed with Node.js `scrypt` and a unique random salt.
-
-User profiles store a `role` of `customer` or `admin`. New registrations are customers. Admin pages and mutation APIs verify the role on the server, so hiding the dashboard link is not the security boundary. Administrator promotion is available through the following maintenance command:
-
-```powershell
-npm.cmd run admin:promote -- user@example.com
-```
-
-Pending registrations store only a password hash and an HMAC of the six-digit code. Password recovery records also store only an HMAC of the reset code. Codes expire after 10 minutes, verification is limited to five attempts, and AWS deployments enable DynamoDB TTL on `expiresAtEpoch` to clean up abandoned flows.
-
-## Runtime Configuration
-
-Local development uses DynamoDB Local through the AWS SDK, with persistent data stored in `.local/dynamodb`. The local environment uses `DYNAMODB_ENDPOINT=http://127.0.0.1:8000` and `USE_MOCK_DB=false`; Java and DynamoDB Local from NoSQL Workbench provide the local database runtime.
-
-The relevant local commands are `npm.cmd run db:local`, `npm.cmd run db:setup`, and `npm.cmd run dev`. The setup script is idempotent: it creates the table when needed and seeds products and categories without removing existing users.
-
-Cloud environments use AWS DynamoDB with `DYNAMODB_ENDPOINT` absent, an IAM identity restricted to the application table, and values from `.env.production.example`. Local and cloud databases are separate. The production database setup uses `ENV_FILE=.env.production.local` together with `npm.cmd run db:setup`.
+Repositories provide read, create, update, and delete operations. Cart and wishlist records are isolated by user. DynamoDB conditional writes prevent duplicate wishlist items.
 
 ## Environment Variables
 
-| Variable | Required | Purpose |
-| --- | --- | --- |
-| `AWS_REGION` | Yes | AWS region containing the table |
-| `DYNAMODB_TABLE_NAME` | Yes | DynamoDB table name |
-| `SESSION_SECRET` | Yes | Signs seven-day HTTP-only session cookies |
-| `USE_MOCK_DB` | Yes | `false` for AWS DynamoDB; `true` is an optional offline development fallback |
-| `SMTP_HOST` | Yes | SMTP server hostname |
-| `SMTP_PORT` | Yes | SMTP port, usually `587` for STARTTLS or `465` for TLS |
-| `SMTP_SECURE` | Yes | `true` for port `465`; otherwise `false` |
-| `SMTP_USER` | Yes | SMTP account username |
-| `SMTP_PASS` | Yes | SMTP password or provider app password |
-| `MAIL_FROM` | Yes | Sender displayed on verification emails |
-| `AWS_ACCESS_KEY_ID` | Host-dependent | Prefer the AWS CLI profile locally or the deployment platform's secret manager |
-| `AWS_SECRET_ACCESS_KEY` | Host-dependent | Stored only in the local environment or deployment secret manager |
-
-The AWS SDK uses its standard credential provider chain, so local AWS CLI profiles and IAM roles work without hardcoding keys.
-
-## API Routes
-
-| Method and route | Purpose |
+| Variable | Purpose |
 | --- | --- |
-| `POST /api/auth/register` | Validate registration details and email a verification code |
-| `POST /api/auth/register/verify` | Verify the code, create the user, and create a session |
-| `POST /api/auth/register/resend` | Send a replacement verification code |
-| `POST /api/auth/login` | Authenticate and create a session |
-| `POST /api/auth/logout` | Clear the session |
-| Server Action `logoutAction` | Clear the session through the logout form without a client-side API call |
-| `GET /api/auth/session` | Read the current session user |
-| `POST /api/auth/password-reset/request` | Email a password recovery code without exposing account existence |
-| `POST /api/auth/password-reset/confirm` | Verify the recovery code and replace the password |
-| `GET /api/products` | Search, filter, sort, and list products |
-| `GET /api/products/:id` | Read one product |
-| `GET /api/categories` | List categories |
-| `GET /api/users/current` | Read the authenticated user |
-| `PATCH /api/users/current` | Update the authenticated user's name or email |
-| `PATCH /api/users/current/password` | Change the password after verifying the current password |
-| `POST /api/admin/products` | Admin: create a product |
-| `PATCH`, `DELETE /api/admin/products/:id` | Admin: update or delete a product |
-| `POST /api/admin/categories` | Admin: create a category |
-| `PATCH`, `DELETE /api/admin/categories/:id` | Admin: update or delete a category |
-| `PATCH`, `DELETE /api/admin/users/:id` | Admin: change a role or delete an account |
-| `GET`, `POST /api/cart` | Read the cart or add an item |
-| `PATCH`, `DELETE /api/cart/:productId` | Update quantity or remove an item |
-| `GET`, `POST /api/wishlist` | Read the wishlist or add an item |
-| `DELETE /api/wishlist/:productId` | Remove a wishlist item |
+| `AWS_REGION` | AWS region containing the DynamoDB table |
+| `DYNAMODB_TABLE_NAME` | DynamoDB table name |
+| `DYNAMODB_ENDPOINT` | DynamoDB Local endpoint for development |
+| `USE_MOCK_DB` | Optional local in-memory storage switch |
+| `SESSION_SECRET` | Session cookie signing secret |
+| `SMTP_HOST` | SMTP server hostname |
+| `SMTP_PORT` | SMTP server port |
+| `SMTP_SECURE` | SMTP TLS mode |
+| `SMTP_USER` | SMTP account |
+| `SMTP_PASS` | SMTP password or app password |
+| `MAIL_FROM` | Sender email address |
+| `AWS_ACCESS_KEY_ID` | AWS access key for cloud environments |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret key for cloud environments |
 
-API responses use a consistent `{ data }` success shape and structured `{ error, code }` failures. Zod validates important request data. Authentication, malformed JSON, stock conflicts, missing records, and DynamoDB availability are handled with suitable HTTP status codes.
+Secrets are stored in `.env*.local` files or in the hosting provider's secret manager. Local environment files are ignored by Git.
 
-## Quality Checks
+## Installation Instructions
 
-```bash
-npm run typecheck
-npm run build
+```powershell
+npm install
+npm.cmd run db:local
 ```
 
-## Screenshots
+In a second terminal:
 
-The application includes the following main views:
+```powershell
+npm.cmd run db:setup
+npm test
+npm.cmd run dev
+```
 
-- Responsive homepage with featured collections and products
-- Product catalog with dynamic search, category, price, and sort filters
-- Product detail page with stock, tags, cart actions, wishlist actions, and related products
-- Authenticated cart with quantity management and calculated subtotal
-- Authenticated wishlist with persistent saved products
+The local application runs at `http://localhost:3000`. `.env.example` describes local configuration and `.env.production.example` describes AWS and SMTP production configuration.
 
-## Deployment
+## Final Application Screenshots
 
-The production topology is Vercel for the Next.js runtime and AWS DynamoDB for persistent data. Vercel receives the production environment variables `AWS_REGION`, `DYNAMODB_TABLE_NAME`, `USE_MOCK_DB`, `SESSION_SECRET`, `SMTP_*`, `MAIL_FROM`, `AWS_ACCESS_KEY_ID`, and `AWS_SECRET_ACCESS_KEY`; `DYNAMODB_ENDPOINT` remains absent because localhost is only available during local development.
-
-The cloud table is created and seeded by `npm.cmd run db:setup` with the production environment file. DynamoDB TTL cleans up expired email-verification and password-recovery records. Deployments are produced from the `main` branch of the GitHub repository.
-
-The repository contains the application source code, technical documentation, and deployment configuration.
+Final views include the homepage, product catalog with filters, product detail page, cart, wishlist, and login page.

@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import {
+  ArrowUpRight,
   ChevronDown,
   Heart,
   MapPin,
@@ -18,19 +20,26 @@ import {
 import { LogoutButton } from "@/components/logout-button";
 import { CartCount } from "@/components/cart-provider";
 import { WishlistCount } from "@/components/wishlist-provider";
-import type { Category, User } from "@/types";
+import type { Category, Product, User } from "@/types";
 
 type HeaderClientProps = {
   user: User | null;
   categories: Category[];
+  products: Product[];
 };
 
-export function HeaderClient({ user, categories }: HeaderClientProps) {
+export function HeaderClient({ user, categories, products }: HeaderClientProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [collectionsOpen, setCollectionsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchCategory, setSearchCategory] = useState("all");
+  const [searchFocused, setSearchFocused] = useState(false);
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const searchSuggestions = useMemo(() => {
+    if (normalizedQuery.length < 2) return [];
+    return products.filter((product) => [product.name, product.categoryName, ...product.tags].some((value) => value.toLowerCase().includes(normalizedQuery))).slice(0, 5);
+  }, [normalizedQuery, products]);
 
   if (pathname.startsWith("/admin")) return null;
 
@@ -39,46 +48,27 @@ export function HeaderClient({ user, categories }: HeaderClientProps) {
     const params = new URLSearchParams();
     const query = searchQuery.trim();
     if (query) params.set("q", query);
-    if (searchCategory !== "all") params.set("category", searchCategory);
     setMenuOpen(false);
+    setSearchFocused(false);
     router.push(`/products${params.size ? `?${params}` : ""}`);
   }
 
   const searchForm = (compact = false) => (
-    <form
-      onSubmit={submitSearch}
-      role="search"
-      className={`flex min-w-0 flex-1 overflow-hidden rounded-md bg-white ring-2 ring-transparent transition focus-within:ring-[#ef8354] ${compact ? "h-11" : "h-12"}`}
-    >
-      <label className="sr-only" htmlFor={compact ? "mobile-search-category" : "desktop-search-category"}>
-        Search collection
-      </label>
-      <select
-        id={compact ? "mobile-search-category" : "desktop-search-category"}
-        value={searchCategory}
-        onChange={(event) => setSearchCategory(event.target.value)}
-        className="w-[92px] shrink-0 border-r border-slate-200 bg-[#f3f4f6] px-3 text-xs font-semibold text-slate-700 outline-none sm:w-36"
-      >
-        <option value="all">All collections</option>
-        {categories.map((category) => (
-          <option key={category.id} value={category.id}>{category.name}</option>
-        ))}
-      </select>
-      <label className="sr-only" htmlFor={compact ? "mobile-store-search" : "desktop-store-search"}>
-        Search products
-      </label>
-      <input
-        id={compact ? "mobile-store-search" : "desktop-store-search"}
-        value={searchQuery}
-        onChange={(event) => setSearchQuery(event.target.value)}
-        type="search"
-        placeholder="Search products, materials and collections"
-        className="min-w-0 flex-1 border-0 bg-white px-3 text-sm text-ink outline-none placeholder:text-slate-400 sm:px-4"
-      />
-      <button type="submit" className="grid w-12 shrink-0 place-items-center bg-[#ef8354] text-ink transition hover:bg-[#ff9d72] sm:w-14" aria-label="Search catalog" title="Search catalog">
-        <Search size={22} strokeWidth={2.2} aria-hidden="true" />
-      </button>
-    </form>
+    <div className="relative min-w-0 flex-1">
+      <form onSubmit={submitSearch} role="search" className={`flex min-w-0 overflow-hidden rounded-xl border border-white/10 bg-white shadow-[0_10px_30px_rgba(0,0,0,0.2)] ring-2 ring-transparent transition focus-within:border-[#ffad87] focus-within:ring-[#ef8354]/35 ${compact ? "h-11" : "h-12"}`}>
+        <Search size={compact ? 18 : 20} className="ml-4 shrink-0 self-center text-[#d75e36]" strokeWidth={2.3} aria-hidden="true" />
+        <label className="sr-only" htmlFor={compact ? "mobile-store-search" : "desktop-store-search"}>Search products</label>
+        <input id={compact ? "mobile-store-search" : "desktop-store-search"} value={searchQuery} onFocus={() => setSearchFocused(true)} onBlur={() => window.setTimeout(() => setSearchFocused(false), 160)} onChange={(event) => setSearchQuery(event.target.value)} type="search" placeholder="Search the store" className="min-w-0 flex-1 border-0 bg-transparent px-3 text-sm font-medium text-[#172033] outline-none placeholder:font-normal placeholder:text-slate-400 sm:px-4" />
+        <button type="submit" className="m-1 grid w-10 shrink-0 place-items-center rounded-lg bg-[#ef8354] text-[#172033] transition hover:bg-[#ffad87] hover:shadow-md sm:w-11" aria-label="Search catalog" title="Search catalog"><ArrowUpRight size={19} strokeWidth={2.5} aria-hidden="true" /></button>
+      </form>
+      {searchFocused && normalizedQuery.length >= 2 ? <div className="absolute left-0 right-0 z-50 mt-2 overflow-hidden rounded-xl border border-slate-200 bg-white p-2 shadow-[0_18px_45px_rgba(15,23,42,0.24)]">
+        <div className="flex items-center justify-between px-3 pb-2 pt-1"><span className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Suggested for you</span><span className="text-[11px] font-medium text-slate-400">{searchSuggestions.length} found</span></div>
+        {searchSuggestions.length ? searchSuggestions.map((product) => <Link key={product.id} onMouseDown={(event) => event.preventDefault()} onClick={() => setSearchFocused(false)} href={`/products/${product.slug}`} className="group flex items-center gap-3 rounded-lg px-3 py-2.5 transition hover:bg-[#fff2ec]">
+          <span className="relative size-11 shrink-0 overflow-hidden rounded-lg bg-[#172033]"><Image src={product.imageUrl} alt="" fill sizes="44px" className="object-cover transition duration-300 group-hover:scale-110" /><span className="absolute inset-0 ring-1 ring-inset ring-black/10" /></span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-bold text-[#172033]">{product.name}</span><span className="block truncate text-xs text-slate-500">{product.categoryName} · ${product.price.toFixed(2)}</span></span><ArrowUpRight size={16} className="text-slate-300 transition group-hover:text-[#d75e36]" />
+        </Link>) : <div className="px-3 py-5 text-center"><p className="text-sm font-bold text-[#172033]">No product found</p><p className="mt-1 text-xs text-slate-500">Try a material, collection or product name.</p></div>}
+        <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { setSearchFocused(false); router.push(`/products?q=${encodeURIComponent(searchQuery.trim())}`); }} className="mt-1 flex w-full items-center justify-between rounded-lg border-t border-slate-100 px-3 py-2.5 text-left text-xs font-bold text-[#d75e36] hover:bg-slate-50">View all results for “{searchQuery.trim()}” <ArrowUpRight size={15} /></button>
+      </div> : null}
+    </div>
   );
 
   return (
@@ -140,24 +130,24 @@ export function HeaderClient({ user, categories }: HeaderClientProps) {
         <div className="mx-auto flex max-w-[1600px] px-3 pb-3 sm:px-6 lg:hidden">{searchForm(true)}</div>
       </div>
 
-      <nav className="border-b border-slate-200 bg-white" aria-label="Store navigation">
-        <div className="mx-auto flex h-11 max-w-[1600px] items-center gap-1 overflow-x-auto px-3 [scrollbar-width:none] sm:px-6 lg:px-8">
+      <nav className="relative border-b border-slate-200 bg-white" aria-label="Store navigation">
+        <div className="mx-auto flex h-11 max-w-[1600px] items-center gap-1 overflow-x-auto px-3 [scrollbar-width:none] sm:px-6 lg:overflow-visible lg:px-8">
           <Link href="/" className={`shrink-0 rounded-md px-3 py-2 text-xs font-bold transition hover:bg-slate-100 ${pathname === "/" ? "text-[#d75e36]" : "text-slate-700"}`}>Home</Link>
           <Link href="/products" className={`shrink-0 rounded-md px-3 py-2 text-xs font-bold transition hover:bg-slate-100 ${pathname.startsWith("/products") ? "text-[#d75e36]" : "text-slate-700"}`}>Shop all</Link>
-          <details className="group relative hidden shrink-0 lg:block">
-            <summary className={`flex cursor-pointer list-none items-center gap-1 rounded-md px-3 py-2 text-xs font-bold transition hover:bg-slate-100 ${pathname.startsWith("/categories/") ? "text-[#d75e36]" : "text-slate-700"}`}>
-              Collections <ChevronDown size={14} className="transition group-open:rotate-180" />
-            </summary>
-            <div className="absolute left-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-md border border-slate-200 bg-white p-2 shadow-2xl">
+          <div className="relative hidden shrink-0 lg:block">
+            <button type="button" onClick={() => setCollectionsOpen((open) => !open)} aria-expanded={collectionsOpen} aria-controls="collections-menu" className={`flex items-center gap-1 rounded-md px-3 py-2 text-xs font-bold transition hover:bg-slate-100 ${pathname.startsWith("/categories/") ? "text-[#d75e36]" : "text-slate-700"}`}>
+              Collections <ChevronDown size={14} className={`transition ${collectionsOpen ? "rotate-180" : ""}`} />
+            </button>
+            {collectionsOpen ? <div id="collections-menu" className="absolute left-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-md border border-slate-200 bg-white p-2 shadow-2xl">
               <p className="px-3 pb-2 pt-1 text-[10px] font-bold uppercase text-slate-400">Shop by collection</p>
               {categories.map((category) => (
-                <Link key={category.id} href={`/categories/${category.slug}`} className="block rounded-md px-3 py-3 transition hover:bg-slate-50">
+                <Link key={category.id} onClick={() => setCollectionsOpen(false)} href={`/categories/${category.slug}`} className="block rounded-md px-3 py-3 transition hover:bg-slate-50">
                   <span className="block text-sm font-semibold text-slate-900">{category.name}</span>
                   <span className="mt-0.5 line-clamp-1 block text-xs text-slate-500">{category.description}</span>
                 </Link>
               ))}
-            </div>
-          </details>
+            </div> : null}
+          </div>
           {categories.map((category) => (
             <Link key={category.id} href={`/categories/${category.slug}`} className="shrink-0 rounded-md px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100 hover:text-[#d75e36] lg:hidden">{category.name}</Link>
           ))}

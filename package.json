@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "test": "vitest run",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -33,6 +34,7 @@
     "eslint-config-next": "^15.0.4",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.16",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^4.1.11"
   }
 }

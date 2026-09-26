@@ -14,22 +14,29 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     if (typeof value === "string") params.set(key, value);
   });
 
-  const [categories, products] = await Promise.all([
+  const [categories, products, catalog] = await Promise.all([
     catalogRepository.listCategories(),
-    catalogService.getProducts(params)
+    catalogService.getProducts(params),
+    catalogRepository.listProducts()
   ]);
 
   return (
     <section className="bg-[#f4f5f3] pb-20">
-      <div className="bg-[#172033] px-4 py-14 text-white sm:px-6 lg:px-8 lg:py-20">
-        <div className="mx-auto max-w-[1500px]">
-          <p className="text-sm font-semibold uppercase text-[#ffb38f]">The full collection</p>
-          <div className="mt-3 flex flex-wrap items-end justify-between gap-6"><div><h1 className="text-5xl font-bold sm:text-6xl">Shop all products</h1><p className="mt-4 max-w-2xl text-lg text-slate-300">Objects chosen for better spaces, smoother routines and everyday use.</p></div><p className="text-sm text-slate-400">{products.length} curated pieces</p></div>
+      <div className="relative overflow-hidden bg-[#172033] px-4 py-8 text-white sm:px-6 lg:px-8 lg:py-10">
+        <div className="absolute -right-20 -top-24 size-72 rounded-full bg-[#ef8354]/20 blur-3xl" /><div className="absolute -bottom-24 left-1/3 size-64 rounded-full bg-emerald-500/10 blur-3xl" />
+        <div className="relative mx-auto max-w-[1500px]">
+          <div className="flex flex-wrap items-end justify-between gap-5"><div><p className="inline-flex rounded-full border border-[#ffb38f]/25 bg-[#ef8354]/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#ffb38f]">The full collection</p><h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Shop all products</h1><p className="mt-2 max-w-2xl text-sm text-slate-300 sm:text-base">Objects chosen for better spaces, smoother routines and everyday use.</p></div><p className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-300"><span className="mr-1.5 text-[#ff9d72]">✦</span>{products.length} curated pieces</p></div>
         </div>
       </div>
-      <div className="mx-auto -mt-6 max-w-[1500px] space-y-10 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto -mt-4 max-w-[1500px] space-y-9 px-4 sm:px-6 lg:px-8">
         <FilterBar
           categories={categories}
+          suggestions={catalog.map((product) => ({
+            id: product.id,
+            name: product.name,
+            categoryName: product.categoryName,
+            tags: product.tags
+          }))}
           resultCount={products.length}
           defaults={{
             q: typeof resolved.q === "string" ? resolved.q : "",

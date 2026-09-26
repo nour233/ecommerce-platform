@@ -5,10 +5,11 @@ import { catalogRepository } from "@/lib/repositories/catalog";
 
 export async function Header() {
   const userId = await getSessionUserId();
-  const [user, categories] = await Promise.all([
+  const [user, categories, products] = await Promise.all([
     userId ? userRepository.getUser(userId) : null,
-    catalogRepository.listCategories()
+    catalogRepository.listCategories(),
+    catalogRepository.listProducts()
   ]);
 
-  return <HeaderClient user={user} categories={categories} />;
+  return <HeaderClient user={user} categories={categories} products={products} />;
 }
