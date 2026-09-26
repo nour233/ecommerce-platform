@@ -31,7 +31,7 @@ type CategoryDraft = Omit<Category, "id">;
 
 const emptyProduct: ProductDraft = { name: "", slug: "", description: "", categoryId: "", price: 0, rating: 0, stock: 0, imageUrl: "", tags: [] };
 const emptyCategory: CategoryDraft = { name: "", slug: "", description: "", imageUrl: "" };
-const inputClass = "min-h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/15";
+const inputClass = "min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10";
 const integerFormatter = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
 
 async function adminRequest<T>(url: string, options: RequestInit): Promise<T | null> {
@@ -128,24 +128,24 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
   ];
 
   return (
-    <div className="min-h-screen bg-[#f3f5f7] text-slate-950 lg:grid lg:grid-cols-[264px_minmax(0,1fr)]">
-      <aside className="flex bg-[#111827] text-white lg:sticky lg:top-0 lg:h-screen lg:flex-col">
-        <div className="flex min-w-64 items-center gap-3 px-5 py-5 lg:min-w-0">
-          <span className="grid size-10 place-items-center rounded-md bg-[#ef8354] text-white"><ShoppingBag size={20} /></span>
-          <div><p className="font-bold tracking-normal">CommerceCraft</p><p className="text-xs text-slate-400">Merchant workspace</p></div>
+    <div className="min-h-screen bg-[radial-gradient(circle_at_100%_0%,#dff7ed_0%,transparent_28%),linear-gradient(135deg,#f7faf9_0%,#f2f5f8_54%,#eef2f6_100%)] text-slate-950 lg:grid lg:grid-cols-[280px_minmax(0,1fr)]">
+      <aside className="flex bg-[#111827] text-white shadow-2xl shadow-slate-950/20 lg:sticky lg:top-0 lg:h-screen lg:flex-col">
+        <div className="flex min-w-64 items-center gap-3 px-6 py-6 lg:min-w-0">
+          <span className="grid size-11 place-items-center rounded-2xl bg-gradient-to-br from-[#ff9b6d] to-[#e95d36] text-white shadow-lg shadow-orange-950/25"><ShoppingBag size={21} /></span>
+          <div><p className="font-bold tracking-tight">CommerceCraft</p><p className="mt-0.5 text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">Merchant workspace</p></div>
         </div>
-        <nav className="flex flex-1 gap-1 overflow-x-auto px-3 pb-3 lg:flex-col lg:overflow-visible lg:py-5" aria-label="Admin navigation">
-          <p className="hidden px-3 pb-2 text-[11px] font-semibold uppercase text-slate-500 lg:block">Workspace</p>
+        <nav className="flex flex-1 gap-1 overflow-x-auto px-4 pb-4 lg:flex-col lg:overflow-visible lg:py-6" aria-label="Admin navigation">
+          <p className="hidden px-3 pb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500 lg:block">Workspace</p>
           {nav.map(({ id, label, icon: Icon, count }) => (
-            <button key={id} type="button" onClick={() => selectSection(id)} className={`flex min-h-11 shrink-0 items-center gap-3 rounded-md px-3 text-sm font-medium transition lg:w-full ${section === id ? "bg-white text-slate-950 shadow-sm" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}>
+            <button key={id} type="button" onClick={() => selectSection(id)} className={`flex min-h-12 shrink-0 items-center gap-3 rounded-xl px-3.5 text-sm font-semibold transition lg:w-full ${section === id ? "bg-white text-slate-950 shadow-lg shadow-black/10" : "text-slate-400 hover:bg-white/10 hover:text-white"}`}>
               <Icon size={18} /><span>{label}</span>{count !== undefined ? <span className={`ml-auto rounded-full px-2 py-0.5 text-xs ${section === id ? "bg-slate-100 text-slate-600" : "bg-white/10 text-slate-400"}`}>{count}</span> : null}
             </button>
           ))}
         </nav>
-        <div className="hidden border-t border-white/10 p-3 lg:block">
-          <Link href="/" className="flex min-h-11 items-center gap-3 rounded-md px-3 text-sm text-slate-400 transition hover:bg-white/5 hover:text-white"><ExternalLink size={17} />View storefront</Link>
-          <div className="mt-2 flex items-center gap-3 rounded-md bg-white/[0.06] p-3">
-            <span className="grid size-9 shrink-0 place-items-center rounded-md bg-emerald-500 text-sm font-bold">{currentUser.name.slice(0, 2).toUpperCase()}</span>
+        <div className="hidden border-t border-white/10 p-4 lg:block">
+          <Link href="/" className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium text-slate-400 transition hover:bg-white/10 hover:text-white"><ExternalLink size={17} />View storefront</Link>
+          <div className="mt-3 flex items-center gap-3 rounded-2xl bg-white/[0.07] p-3 ring-1 ring-white/5">
+            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-emerald-500 text-sm font-bold shadow-lg shadow-emerald-950/30">{currentUser.name.slice(0, 2).toUpperCase()}</span>
             <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{currentUser.name}</p><p className="truncate text-xs text-slate-400">Administrator</p></div>
             <button type="button" onClick={logout} className="grid size-9 place-items-center rounded-md text-slate-400 hover:bg-white/10 hover:text-white" title="Log out" aria-label="Log out"><LogOut size={17} /></button>
           </div>
@@ -153,22 +153,22 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
       </aside>
 
       <div className="min-w-0">
-        <header className="flex min-h-[72px] items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-7">
+        <header className="flex min-h-[78px] items-center justify-between border-b border-white/80 bg-white/80 px-4 backdrop-blur-xl sm:px-8">
           <div className="relative hidden w-full max-w-md sm:block">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
-            <input value={query} onChange={(event) => setQuery(event.target.value)} disabled={section === "overview"} placeholder={section === "overview" ? "Select a workspace to search" : `Search ${section}...`} className="h-10 w-full rounded-md border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-600/10 disabled:opacity-60" />
+            <input value={query} onChange={(event) => setQuery(event.target.value)} disabled={section === "overview"} placeholder={section === "overview" ? "Select a workspace to search" : `Search ${section}...`} className="h-11 w-full rounded-xl border border-slate-200 bg-white/70 pl-10 pr-4 text-sm shadow-sm outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-600/10 disabled:opacity-60" />
           </div>
           <div className="ml-auto flex items-center gap-3">
-            <span className="hidden rounded-md bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 sm:inline-flex"><span className="mr-2 mt-1 size-1.5 rounded-full bg-emerald-500" />Store online</span>
-            <Link href="/" className="grid size-10 place-items-center rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50" title="Open storefront" aria-label="Open storefront"><ArrowUpRight size={18} /></Link>
+            <span className="hidden rounded-full bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-700 ring-1 ring-emerald-100 sm:inline-flex"><span className="mr-2 mt-1 size-1.5 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(34,197,94,.12)]" />Store online</span>
+            <Link href="/" className="grid size-11 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-md" title="Open storefront" aria-label="Open storefront"><ArrowUpRight size={18} /></Link>
           </div>
         </header>
 
-        <main className="mx-auto max-w-[1500px] p-4 sm:p-7 lg:p-8">
-          <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
+        <main className="mx-auto max-w-[1500px] p-5 sm:p-8 lg:p-10">
+          <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="mb-1 text-sm font-medium text-slate-500">{section === "overview" ? `Welcome back, ${currentUser.name.split(" ")[0]}` : "Catalog management"}</p>
-              <h1 className="text-3xl font-bold tracking-normal text-slate-950">{section === "overview" ? "Your store at a glance" : nav.find((item) => item.id === section)?.label}</h1>
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.15em] text-emerald-700">{section === "overview" ? `Welcome back, ${currentUser.name.split(" ")[0]}` : "Catalog management"}</p>
+              <h1 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">{section === "overview" ? "Your store at a glance" : nav.find((item) => item.id === section)?.label}</h1>
             </div>
             {section === "products" ? <PrimaryButton onClick={() => openProduct()} icon={PackagePlus}>Add product</PrimaryButton> : null}
             {section === "categories" ? <PrimaryButton onClick={() => openCategory()} icon={Plus}>Add category</PrimaryButton> : null}
@@ -235,22 +235,22 @@ function Overview({ products, categories, users, inventoryValue, totalStock, onN
     { label: "Customers", value: users.filter((user) => user.role === "customer").length.toString(), note: `${users.filter((user) => user.role === "admin").length} administrators`, icon: Users, tone: "bg-violet-50 text-violet-700" }
   ];
   const maxStock = Math.max(...products.map((product) => product.stock), 1);
-  return <div className="space-y-6">
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{stats.map(({ label, value, note, icon: Icon, tone }) => <article key={label} className="rounded-md border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-start justify-between"><span className={`grid size-10 place-items-center rounded-md ${tone}`}><Icon size={20} /></span><ArrowUpRight size={17} className="text-slate-300" /></div><p className="mt-5 text-sm font-medium text-slate-500">{label}</p><p className="mt-1 text-3xl font-bold tracking-normal">{value}</p><p className="mt-2 text-xs text-slate-400">{note}</p></article>)}</div>
+  return <div className="space-y-7">
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{stats.map(({ label, value, note, icon: Icon, tone }) => <article key={label} className="group rounded-2xl border border-white bg-white/90 p-5 shadow-[0_12px_34px_rgba(15,23,42,0.06)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_42px_rgba(15,23,42,0.10)]"><div className="flex items-start justify-between"><span className={`grid size-11 place-items-center rounded-2xl ${tone}`}><Icon size={20} /></span><ArrowUpRight size={17} className="text-slate-300 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-slate-600" /></div><p className="mt-6 text-sm font-semibold text-slate-500">{label}</p><p className="mt-1.5 text-3xl font-bold tracking-tight">{value}</p><p className="mt-2 text-xs font-medium text-slate-400">{note}</p></article>)}</div>
     <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
       <DataPanel title="Inventory health" detail="Stock distribution by product">
         <div className="space-y-5 p-5">{products.slice(0, 6).map((product) => <div key={product.id}><div className="mb-2 flex items-center justify-between gap-4 text-sm"><span className="truncate font-medium text-slate-700">{product.name}</span><span className="text-slate-500">{product.stock} units</span></div><div className="h-2 overflow-hidden rounded-full bg-slate-100"><div className={`h-full rounded-full ${product.stock < 10 ? "bg-[#ef8354]" : "bg-emerald-500"}`} style={{ width: `${Math.max(5, product.stock / maxStock * 100)}%` }} /></div></div>)}</div>
       </DataPanel>
-      <div className="rounded-md bg-[#172033] p-6 text-white shadow-sm"><span className="grid size-10 place-items-center rounded-md bg-[#ef8354]"><Sparkles size={20} /></span><h2 className="mt-6 text-xl font-bold">Catalog control</h2><p className="mt-2 text-sm leading-6 text-slate-400">Keep product details, stock levels, collections and customer access current from one workspace.</p><div className="mt-6 space-y-2"><button onClick={() => onNavigate("products")} className="flex min-h-11 w-full items-center justify-between rounded-md bg-white px-4 text-sm font-semibold text-slate-950">Manage inventory <ArrowUpRight size={17} /></button><button onClick={() => onNavigate("users")} className="flex min-h-11 w-full items-center justify-between rounded-md border border-white/15 px-4 text-sm font-semibold text-white">Review customers <ArrowUpRight size={17} /></button></div></div>
+      <div className="rounded-2xl bg-[radial-gradient(circle_at_100%_0%,#2c5364_0%,transparent_42%),#172033] p-6 text-white shadow-xl shadow-slate-900/15"><span className="grid size-11 place-items-center rounded-2xl bg-[#ef8354] shadow-lg shadow-orange-950/30"><Sparkles size={20} /></span><h2 className="mt-6 text-xl font-bold tracking-tight">Catalog control</h2><p className="mt-2 text-sm leading-6 text-slate-400">Keep product details, stock levels, collections and customer access current from one workspace.</p><div className="mt-6 space-y-2.5"><button onClick={() => onNavigate("products")} className="flex min-h-11 w-full items-center justify-between rounded-xl bg-white px-4 text-sm font-bold text-slate-950 shadow-sm transition hover:-translate-y-0.5">Manage inventory <ArrowUpRight size={17} /></button><button onClick={() => onNavigate("users")} className="flex min-h-11 w-full items-center justify-between rounded-xl border border-white/15 px-4 text-sm font-semibold text-white transition hover:bg-white/10">Review customers <ArrowUpRight size={17} /></button></div></div>
     </div>
   </div>;
 }
 
-function PrimaryButton({ onClick, icon: Icon, children }: { onClick: () => void; icon: typeof Plus; children: React.ReactNode }) { return <button type="button" onClick={onClick} className="inline-flex min-h-11 items-center gap-2 rounded-md bg-emerald-700 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800"><Icon size={18} />{children}</button>; }
-function DataPanel({ title, detail, children }: { title: string; detail: string; children: React.ReactNode }) { return <section className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm"><div className="flex items-center justify-between border-b border-slate-100 px-5 py-4"><div><h2 className="font-bold text-slate-900">{title}</h2><p className="mt-0.5 text-xs text-slate-400">{detail}</p></div></div>{children}</section>; }
-function AdminTable({ headers, children }: { headers: string[]; children: React.ReactNode }) { return <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-left"><thead className="bg-slate-50 text-[11px] uppercase text-slate-400"><tr>{headers.map((header) => <th key={header} className="px-5 py-3 font-semibold">{header}</th>)}</tr></thead><tbody>{children}</tbody></table></div>; }
+function PrimaryButton({ onClick, icon: Icon, children }: { onClick: () => void; icon: typeof Plus; children: React.ReactNode }) { return <button type="button" onClick={onClick} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-emerald-700 px-4 text-sm font-bold text-white shadow-lg shadow-emerald-900/15 transition hover:-translate-y-0.5 hover:bg-emerald-800 hover:shadow-xl"><Icon size={18} />{children}</button>; }
+function DataPanel({ title, detail, children }: { title: string; detail: string; children: React.ReactNode }) { return <section className="overflow-hidden rounded-2xl border border-white bg-white/90 shadow-[0_12px_34px_rgba(15,23,42,0.06)]"><div className="flex items-center justify-between border-b border-slate-100 px-6 py-5"><div><h2 className="font-bold tracking-tight text-slate-900">{title}</h2><p className="mt-1 text-xs font-medium text-slate-400">{detail}</p></div></div>{children}</section>; }
+function AdminTable({ headers, children }: { headers: string[]; children: React.ReactNode }) { return <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-left"><thead className="bg-slate-50/80 text-[10px] uppercase tracking-[0.12em] text-slate-400"><tr>{headers.map((header) => <th key={header} className="px-5 py-3.5 font-bold">{header}</th>)}</tr></thead><tbody>{children}</tbody></table></div>; }
 function StockBadge({ stock }: { stock: number }) { const style = stock === 0 ? "bg-red-50 text-red-700" : stock < 10 ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"; return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${style}`}>{stock === 0 ? "Out of stock" : `${stock} in stock`}</span>; }
 function RowActions({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) { return <div className="flex justify-end gap-1"><button type="button" title="Edit" aria-label="Edit" onClick={onEdit} className="grid size-9 place-items-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"><Pencil size={17} /></button><button type="button" title="Delete" aria-label="Delete" onClick={onDelete} className="grid size-9 place-items-center rounded-md text-slate-400 transition hover:bg-red-50 hover:text-red-600"><Trash2 size={17} /></button></div>; }
-function Editor({ title, subtitle, onClose, children }: { title: string; subtitle: string; onClose: () => void; children: React.ReactNode }) { return <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-slate-950/55 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={title}><div className="my-8 w-full max-w-2xl rounded-md bg-[#f8fafc] shadow-2xl"><div className="flex items-start justify-between border-b border-slate-200 bg-white p-6"><div><h2 className="text-2xl font-bold">{title}</h2><p className="mt-1 text-sm text-slate-500">{subtitle}</p></div><button type="button" onClick={onClose} className="grid size-9 place-items-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="Close"><X size={19} /></button></div><div className="p-6">{children}</div></div></div>; }
-function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">{label}</span>{children}</label>; }
-function FormActions({ busy, onCancel }: { busy: boolean; onCancel: () => void }) { return <div className="flex justify-end gap-3 border-t border-slate-200 pt-5 sm:col-span-2"><button type="button" onClick={onCancel} className="min-h-11 rounded-md border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50">Cancel</button><button disabled={busy} className="min-h-11 rounded-md bg-emerald-700 px-5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50">{busy ? "Saving..." : "Save changes"}</button></div>; }
+function Editor({ title, subtitle, onClose, children }: { title: string; subtitle: string; onClose: () => void; children: React.ReactNode }) { return <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-slate-950/60 p-4 backdrop-blur-md" role="dialog" aria-modal="true" aria-label={title}><div className="my-8 w-full max-w-2xl overflow-hidden rounded-2xl bg-[#f8fafc] shadow-2xl shadow-slate-950/30"><div className="flex items-start justify-between border-b border-slate-200 bg-white px-7 py-6"><div><p className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">Catalog editor</p><h2 className="text-2xl font-bold tracking-tight">{title}</h2><p className="mt-1.5 text-sm text-slate-500">{subtitle}</p></div><button type="button" onClick={onClose} className="grid size-10 place-items-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" aria-label="Close"><X size={19} /></button></div><div className="p-7">{children}</div></div></div>; }
+function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="block"><span className="mb-2 block text-sm font-bold text-slate-700">{label}</span>{children}</label>; }
+function FormActions({ busy, onCancel }: { busy: boolean; onCancel: () => void }) { return <div className="flex justify-end gap-3 border-t border-slate-200 pt-6 sm:col-span-2"><button type="button" onClick={onCancel} className="min-h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50">Cancel</button><button disabled={busy} className="min-h-11 rounded-xl bg-emerald-700 px-5 text-sm font-bold text-white shadow-lg shadow-emerald-900/15 transition hover:-translate-y-0.5 hover:bg-emerald-800 disabled:opacity-50">{busy ? "Saving..." : "Save changes"}</button></div>; }
