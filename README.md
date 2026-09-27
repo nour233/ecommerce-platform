@@ -16,6 +16,7 @@ CommerceCraft is a full-stack e-commerce application. Visitors can browse a cata
 - Persistent cart with quantity controls, stock validation, and subtotal calculation
 - Persistent wishlist with duplicate prevention
 - Administrator dashboard with product, category, user, cart, and wishlist management
+- AI Store Insights based on inventory, cart, and wishlist activity
 - Loading, empty, validation, error, and not-found states
 
 ## Technologies Used

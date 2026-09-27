@@ -4,6 +4,7 @@ import { getSessionUserId } from "@/lib/auth";
 import { catalogRepository } from "@/lib/repositories/catalog";
 import { userDataRepository } from "@/lib/repositories/user-data";
 import { userRepository } from "@/lib/repositories/users";
+import type { UserCommerceData } from "@/types";
 
 export default async function AdminPage() {
   const userId = await getSessionUserId();
@@ -17,7 +18,7 @@ export default async function AdminPage() {
     userRepository.listUsers()
   ]);
   const productsById = new Map(products.map((product) => [product.id, product]));
-  const initialUserCommerce = await Promise.all(users.map(async (user) => {
+  const initialUserCommerce: UserCommerceData[] = await Promise.all(users.map(async (user) => {
     const [cart, wishlist] = await Promise.all([
       userDataRepository.listCart(user.id),
       userDataRepository.listWishlist(user.id)

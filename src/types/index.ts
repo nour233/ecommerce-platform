@@ -73,6 +73,19 @@ export type WishlistItem = {
   addedAt: string;
 };
 
+export type UserCommerceData = {
+  userId: string;
+  cart: CartItem[];
+  wishlist: WishlistItem[];
+};
+
+export type StoreInsight = {
+  id: "inventory" | "demand" | "catalog";
+  title: string;
+  description: string;
+  tone: "orange" | "rose" | "sky" | "emerald";
+};
+
 export type CartSummary = {
   items: CartItem[];
   subtotal: number;
