@@ -17,6 +17,6 @@ export const env = {
   smtpUser: process.env.SMTP_USER,
   smtpPass: process.env.SMTP_PASS,
   mailFrom: process.env.MAIL_FROM,
-  openAiApiKey: process.env.OPENAI_API_KEY,
-  openAiProductAssistantModel: process.env.OPENAI_PRODUCT_ASSISTANT_MODEL ?? "gpt-6-luna"
+  geminiApiKey: process.env.GEMINI_API_KEY,
+  geminiProductAssistantModel: process.env.GEMINI_PRODUCT_ASSISTANT_MODEL ?? "gemini-3.8-flash"
 } as const;

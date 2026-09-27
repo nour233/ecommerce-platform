@@ -116,8 +116,8 @@ Repositories provide read, create, update, and delete operations. Cart and wishl
 | `MAIL_FROM` | Sender email address |
 | `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name used for image uploads |
 | `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET` | Unsigned Cloudinary upload preset used by the admin dashboard |
-| `OPENAI_API_KEY` | Server-side key used by the optional AI Product Copilot |
-| `OPENAI_PRODUCT_ASSISTANT_MODEL` | Vision model used by the Product Copilot; defaults to `gpt-6-luna` |
+| `GEMINI_API_KEY` | Free-tier Gemini key used by the optional AI Product Copilot |
+| `GEMINI_PRODUCT_ASSISTANT_MODEL` | Vision model used by the Product Copilot; defaults to `gemini-3.8-flash` |
 | `AWS_ACCESS_KEY_ID` | AWS access key for cloud environments |
 | `AWS_SECRET_ACCESS_KEY` | AWS secret key for cloud environments |
 
