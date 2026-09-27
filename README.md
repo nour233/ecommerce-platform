@@ -17,6 +17,7 @@ CommerceCraft is a full-stack e-commerce application. Visitors can browse a cata
 - Persistent wishlist with duplicate prevention
 - Administrator dashboard with product, category, user, cart, and wishlist management
 - AI Store Insights based on inventory, cart, and wishlist activity
+- Optional AI Product Copilot that creates editable catalog details from a product image
 - Loading, empty, validation, error, and not-found states
 
 ## Technologies Used
@@ -115,6 +116,8 @@ Repositories provide read, create, update, and delete operations. Cart and wishl
 | `MAIL_FROM` | Sender email address |
 | `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name used for image uploads |
 | `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET` | Unsigned Cloudinary upload preset used by the admin dashboard |
+| `OPENAI_API_KEY` | Server-side key used by the optional AI Product Copilot |
+| `OPENAI_PRODUCT_ASSISTANT_MODEL` | Vision model used by the Product Copilot; defaults to `gpt-6-luna` |
 | `AWS_ACCESS_KEY_ID` | AWS access key for cloud environments |
 | `AWS_SECRET_ACCESS_KEY` | AWS secret key for cloud environments |
 

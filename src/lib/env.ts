@@ -16,5 +16,7 @@ export const env = {
   smtpSecure: process.env.SMTP_SECURE === "true",
   smtpUser: process.env.SMTP_USER,
   smtpPass: process.env.SMTP_PASS,
-  mailFrom: process.env.MAIL_FROM
+  mailFrom: process.env.MAIL_FROM,
+  openAiApiKey: process.env.OPENAI_API_KEY,
+  openAiProductAssistantModel: process.env.OPENAI_PRODUCT_ASSISTANT_MODEL ?? "gpt-6-luna"
 } as const;

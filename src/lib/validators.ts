@@ -110,3 +110,7 @@ export const adminUserUpdateSchema = z.object({
   email: emailSchema,
   role: z.enum(["admin", "customer"])
 });
+
+export const adminAiProductSchema = z.object({
+  imageUrl: z.string().trim().url().refine((value) => value.startsWith("https://"), "Use a secure image URL")
+});

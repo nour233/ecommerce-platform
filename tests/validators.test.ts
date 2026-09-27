@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { adminUserUpdateSchema, cartItemSchema, registerSchema, verificationCodeSchema } from "@/lib/validators";
+import { adminAiProductSchema, adminUserUpdateSchema, cartItemSchema, registerSchema, verificationCodeSchema } from "@/lib/validators";
 
 describe("request validation", () => {
   it("normalizes a valid registration email", () => {
@@ -18,5 +18,10 @@ describe("request validation", () => {
     expect(() => cartItemSchema.parse({ productId: "", quantity: 0 })).toThrow();
     expect(() => verificationCodeSchema.parse({ email: "user@example.com", code: "123" })).toThrow();
     expect(() => adminUserUpdateSchema.parse({ name: "N", email: "invalid", role: "owner" })).toThrow();
+    expect(() => adminAiProductSchema.parse({ imageUrl: "http://example.com/product.jpg" })).toThrow();
+  });
+
+  it("accepts secure product images for AI analysis", () => {
+    expect(adminAiProductSchema.parse({ imageUrl: "https://images.example.com/product.jpg" }).imageUrl).toBe("https://images.example.com/product.jpg");
   });
 });

@@ -24,6 +24,7 @@ import {
   Trash2,
   TrendingUp,
   Users,
+  WandSparkles,
   X
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -36,6 +37,7 @@ type ProductDraft = Omit<Product, "id" | "categoryName" | "createdAt">;
 type CategoryDraft = Omit<Category, "id">;
 type UserDraft = Pick<User, "name" | "email" | "role">;
 type UserCommerce = UserCommerceData;
+type AiProductSuggestion = Pick<ProductDraft, "name" | "slug" | "description" | "categoryId" | "price" | "tags">;
 
 const emptyProduct: ProductDraft = { name: "", slug: "", description: "", categoryId: "", price: 0, rating: 0, stock: 0, imageUrl: "", tags: [] };
 const emptyCategory: CategoryDraft = { name: "", slug: "", description: "", imageUrl: "" };
@@ -71,6 +73,7 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
   const [userDraft, setUserDraft] = useState<UserDraft | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [aiGenerating, setAiGenerating] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   const inventoryValue = useMemo(() => products.reduce((sum, product) => sum + product.price * product.stock, 0), [products]);
@@ -96,6 +99,18 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
       if (saved) setProducts((items) => productId ? items.map((item) => item.id === saved.id ? saved : item) : [saved, ...items]);
       setProductDraft(null); setProductId(null);
     } catch (error) { report(error); } finally { setBusy(false); }
+  }
+  async function generateProductDetails(imageUrl?: string) {
+    const sourceImage = imageUrl ?? productDraft?.imageUrl;
+    if (!sourceImage || !productDraft) {
+      setMessage("Upload or paste a product image before using AI generation.");
+      return;
+    }
+    setAiGenerating(true); setMessage(null);
+    try {
+      const suggestion = await adminRequest<AiProductSuggestion>("/api/admin/ai/product-details", { method: "POST", body: JSON.stringify({ imageUrl: sourceImage }) });
+      if (suggestion) setProductDraft((current) => current ? { ...current, ...suggestion, imageUrl: sourceImage } : current);
+    } catch (error) { report(error); } finally { setAiGenerating(false); }
   }
   async function removeProduct(product: Product) {
     if (!window.confirm(`Delete ${product.name}?`)) return;
@@ -253,7 +268,7 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
         </main>
       </div>
 
-      {productDraft ? <Editor title={productId ? "Edit product" : "Add a product"} subtitle="Keep storefront information accurate and complete." onClose={() => setProductDraft(null)}><form onSubmit={saveProduct} className="grid gap-4 sm:grid-cols-2"><Field label="Product name"><input required className={inputClass} value={productDraft.name} onChange={(e) => setProductDraft({ ...productDraft, name: e.target.value })} /></Field><Field label="URL slug"><input required className={inputClass} value={productDraft.slug} onChange={(e) => setProductDraft({ ...productDraft, slug: e.target.value })} /></Field><Field label="Category"><select required className={inputClass} value={productDraft.categoryId} onChange={(e) => setProductDraft({ ...productDraft, categoryId: e.target.value })}>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></Field><Field label="Product image"><CloudinaryImageField inputClassName={inputClass} value={productDraft.imageUrl} onChange={(imageUrl) => setProductDraft({ ...productDraft, imageUrl })} /></Field><Field label="Price"><input required type="number" min="0" step="0.01" className={inputClass} value={productDraft.price} onChange={(e) => setProductDraft({ ...productDraft, price: Number(e.target.value) })} /></Field><Field label="Stock"><input required type="number" min="0" className={inputClass} value={productDraft.stock} onChange={(e) => setProductDraft({ ...productDraft, stock: Number(e.target.value) })} /></Field><Field label="Rating"><input required type="number" min="0" max="5" step="0.1" className={inputClass} value={productDraft.rating} onChange={(e) => setProductDraft({ ...productDraft, rating: Number(e.target.value) })} /></Field><Field label="Tags"><input className={inputClass} value={productDraft.tags.join(", ")} onChange={(e) => setProductDraft({ ...productDraft, tags: e.target.value.split(",").map((tag) => tag.trim()).filter(Boolean) })} /></Field><div className="sm:col-span-2"><Field label="Description"><textarea required minLength={10} rows={4} className={`${inputClass} py-3`} value={productDraft.description} onChange={(e) => setProductDraft({ ...productDraft, description: e.target.value })} /></Field></div><FormActions busy={busy} onCancel={() => setProductDraft(null)} /></form></Editor> : null}
+      {productDraft ? <Editor title={productId ? "Edit product" : "Add a product"} subtitle="Keep storefront information accurate and complete." onClose={() => setProductDraft(null)}><form onSubmit={saveProduct} className="grid gap-4 sm:grid-cols-2"><Field label="Product name"><input required className={inputClass} value={productDraft.name} onChange={(e) => setProductDraft({ ...productDraft, name: e.target.value })} /></Field><Field label="URL slug"><input required className={inputClass} value={productDraft.slug} onChange={(e) => setProductDraft({ ...productDraft, slug: e.target.value })} /></Field><Field label="Category"><select required className={inputClass} value={productDraft.categoryId} onChange={(e) => setProductDraft({ ...productDraft, categoryId: e.target.value })}>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></Field><Field label="Product image"><CloudinaryImageField inputClassName={inputClass} value={productDraft.imageUrl} onChange={(imageUrl) => setProductDraft({ ...productDraft, imageUrl })} onUploaded={(imageUrl) => void generateProductDetails(imageUrl)} /><button type="button" disabled={!productDraft.imageUrl || aiGenerating} onClick={() => void generateProductDetails()} className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-3 text-sm font-bold text-violet-700 transition hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-50"><WandSparkles size={16} className={aiGenerating ? "animate-pulse" : ""} />{aiGenerating ? "AI is analyzing the image…" : "Generate product details with AI"}</button><p className="mt-2 text-xs leading-5 text-slate-500">AI suggests editable catalog details from the image. Review them before saving.</p></Field><Field label="Price"><input required type="number" min="0" step="0.01" className={inputClass} value={productDraft.price} onChange={(e) => setProductDraft({ ...productDraft, price: Number(e.target.value) })} /></Field><Field label="Stock"><input required type="number" min="0" className={inputClass} value={productDraft.stock} onChange={(e) => setProductDraft({ ...productDraft, stock: Number(e.target.value) })} /></Field><Field label="Rating"><input required type="number" min="0" max="5" step="0.1" className={inputClass} value={productDraft.rating} onChange={(e) => setProductDraft({ ...productDraft, rating: Number(e.target.value) })} /></Field><Field label="Tags"><input className={inputClass} value={productDraft.tags.join(", ")} onChange={(e) => setProductDraft({ ...productDraft, tags: e.target.value.split(",").map((tag) => tag.trim()).filter(Boolean) })} /></Field><div className="sm:col-span-2"><Field label="Description"><textarea required minLength={10} rows={4} className={`${inputClass} py-3`} value={productDraft.description} onChange={(e) => setProductDraft({ ...productDraft, description: e.target.value })} /></Field></div><FormActions busy={busy} onCancel={() => setProductDraft(null)} /></form></Editor> : null}
       {categoryDraft ? <Editor title={categoryId ? "Edit category" : "Add a category"} subtitle="Organize the catalog into clear storefront collections." onClose={() => setCategoryDraft(null)}><form onSubmit={saveCategory} className="grid gap-4"><Field label="Category name"><input required className={inputClass} value={categoryDraft.name} onChange={(e) => setCategoryDraft({ ...categoryDraft, name: e.target.value })} /></Field><Field label="URL slug"><input required className={inputClass} value={categoryDraft.slug} onChange={(e) => setCategoryDraft({ ...categoryDraft, slug: e.target.value })} /></Field><Field label="Cover image"><CloudinaryImageField inputClassName={inputClass} value={categoryDraft.imageUrl} onChange={(imageUrl) => setCategoryDraft({ ...categoryDraft, imageUrl })} /></Field><Field label="Description"><textarea required minLength={5} rows={4} className={`${inputClass} py-3`} value={categoryDraft.description} onChange={(e) => setCategoryDraft({ ...categoryDraft, description: e.target.value })} /></Field><FormActions busy={busy} onCancel={() => setCategoryDraft(null)} /></form></Editor> : null}
       {userDraft && userId ? <UserEditor user={users.find((user) => user.id === userId) ?? null} commerce={userCommerce.find((item) => item.userId === userId)} currentUserId={currentUser.id} draft={userDraft} busy={busy} onDraftChange={setUserDraft} onClose={() => { setUserDraft(null); setUserId(null); }} onSubmit={saveUser} /> : null}
     </div>

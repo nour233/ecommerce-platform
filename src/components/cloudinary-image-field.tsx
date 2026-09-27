@@ -14,10 +14,11 @@ const DEFAULT_UPLOAD_PRESET = "commercecraft_uploads";
 type CloudinaryImageFieldProps = {
   value: string;
   onChange: (url: string) => void;
+  onUploaded?: (url: string) => void;
   inputClassName: string;
 };
 
-export function CloudinaryImageField({ value, onChange, inputClassName }: CloudinaryImageFieldProps) {
+export function CloudinaryImageField({ value, onChange, onUploaded, inputClassName }: CloudinaryImageFieldProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,6 +46,7 @@ export function CloudinaryImageField({ value, onChange, inputClassName }: Cloudi
       const payload = await response.json() as { secure_url?: string; error?: { message?: string } };
       if (!response.ok || !payload.secure_url) throw new Error(payload.error?.message ?? "Upload failed. Please try again.");
       onChange(payload.secure_url);
+      onUploaded?.(payload.secure_url);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Upload failed. Please try again.");
     } finally {
