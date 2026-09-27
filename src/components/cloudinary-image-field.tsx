@@ -6,11 +6,6 @@ import { useRef, useState } from "react";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
-// Unsigned upload presets and cloud names are intentionally public client configuration.
-// Environment variables can override these values in each deployment.
-const DEFAULT_CLOUD_NAME = "tbqkgomc";
-const DEFAULT_UPLOAD_PRESET = "commercecraft_uploads";
-
 type CloudinaryImageFieldProps = {
   value: string;
   onChange: (url: string) => void;
@@ -24,8 +19,6 @@ export function CloudinaryImageField({ value, onChange, onUploaded, inputClassNa
   const [error, setError] = useState<string | null>(null);
 
   async function upload(file: File) {
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || DEFAULT_CLOUD_NAME;
-    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || DEFAULT_UPLOAD_PRESET;
     if (!ACCEPTED_TYPES.includes(file.type)) {
       setError("Choose a JPG, PNG, or WebP image.");
       return;
@@ -40,13 +33,11 @@ export function CloudinaryImageField({ value, onChange, onUploaded, inputClassNa
     try {
       const body = new FormData();
       body.append("file", file);
-      body.append("upload_preset", uploadPreset);
-      body.append("folder", "commercecraft");
-      const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: "POST", body });
-      const payload = await response.json() as { secure_url?: string; error?: { message?: string } };
-      if (!response.ok || !payload.secure_url) throw new Error(payload.error?.message ?? "Upload failed. Please try again.");
-      onChange(payload.secure_url);
-      onUploaded?.(payload.secure_url);
+      const response = await fetch("/api/admin/uploads/image", { method: "POST", body });
+      const payload = await response.json() as { data?: { imageUrl?: string }; error?: string };
+      if (!response.ok || !payload.data?.imageUrl) throw new Error(payload.error ?? "Upload failed. Please try again.");
+      onChange(payload.data.imageUrl);
+      onUploaded?.(payload.data.imageUrl);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Upload failed. Please try again.");
     } finally {
