@@ -8,6 +8,7 @@ import {
   Boxes,
   CircleDollarSign,
   ExternalLink,
+  Heart,
   LayoutDashboard,
   LogOut,
   PackagePlus,
@@ -15,6 +16,7 @@ import {
   Plus,
   Search,
   ShoppingBag,
+  ShoppingCart,
   Sparkles,
   Tags,
   Trash2,
@@ -22,12 +24,14 @@ import {
   X
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import type { Category, Product, User, UserRole } from "@/types";
+import type { CartItem, Category, Product, User, UserRole, WishlistItem } from "@/types";
 import { CloudinaryImageField } from "@/components/cloudinary-image-field";
 
 type Section = "overview" | "products" | "categories" | "users";
 type ProductDraft = Omit<Product, "id" | "categoryName" | "createdAt">;
 type CategoryDraft = Omit<Category, "id">;
+type UserDraft = Pick<User, "name" | "email" | "role">;
+type UserCommerce = { userId: string; cart: CartItem[]; wishlist: WishlistItem[] };
 
 const emptyProduct: ProductDraft = { name: "", slug: "", description: "", categoryId: "", price: 0, rating: 0, stock: 0, imageUrl: "", tags: [] };
 const emptyCategory: CategoryDraft = { name: "", slug: "", description: "", imageUrl: "" };
@@ -42,11 +46,12 @@ async function adminRequest<T>(url: string, options: RequestInit): Promise<T | n
   return payload.data as T;
 }
 
-export function AdminDashboard({ currentUser, initialProducts, initialCategories, initialUsers }: {
+export function AdminDashboard({ currentUser, initialProducts, initialCategories, initialUsers, initialUserCommerce }: {
   currentUser: User;
   initialProducts: Product[];
   initialCategories: Category[];
   initialUsers: User[];
+  initialUserCommerce: UserCommerce[];
 }) {
   const router = useRouter();
   const [section, setSection] = useState<Section>("overview");
@@ -54,15 +59,20 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
   const [products, setProducts] = useState(initialProducts);
   const [categories, setCategories] = useState(initialCategories);
   const [users, setUsers] = useState(initialUsers);
+  const [userCommerce] = useState(initialUserCommerce);
   const [productDraft, setProductDraft] = useState<ProductDraft | null>(null);
   const [productId, setProductId] = useState<string | null>(null);
   const [categoryDraft, setCategoryDraft] = useState<CategoryDraft | null>(null);
   const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [userDraft, setUserDraft] = useState<UserDraft | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   const inventoryValue = useMemo(() => products.reduce((sum, product) => sum + product.price * product.stock, 0), [products]);
   const totalStock = useMemo(() => products.reduce((sum, product) => sum + product.stock, 0), [products]);
+  const cartItemCount = useMemo(() => userCommerce.reduce((total, commerce) => total + commerce.cart.reduce((count, item) => count + item.quantity, 0), 0), [userCommerce]);
+  const wishlistItemCount = useMemo(() => userCommerce.reduce((total, commerce) => total + commerce.wishlist.length, 0), [userCommerce]);
   const normalizedQuery = query.trim().toLowerCase();
   const visibleProducts = products.filter((product) => !normalizedQuery || `${product.name} ${product.categoryName} ${product.slug}`.toLowerCase().includes(normalizedQuery));
   const visibleCategories = categories.filter((category) => !normalizedQuery || `${category.name} ${category.description}`.toLowerCase().includes(normalizedQuery));
@@ -109,9 +119,24 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
   }
   async function changeRole(user: User, role: UserRole) {
     try {
-      const saved = await adminRequest<User>(`/api/admin/users/${user.id}`, { method: "PATCH", body: JSON.stringify({ role }) });
+      const saved = await adminRequest<User>(`/api/admin/users/${user.id}`, { method: "PATCH", body: JSON.stringify({ name: user.name, email: user.email, role }) });
       if (saved) setUsers((items) => items.map((item) => item.id === saved.id ? saved : item));
     } catch (error) { report(error); }
+  }
+  function openUser(user: User) {
+    setMessage(null);
+    setUserId(user.id);
+    setUserDraft({ name: user.name, email: user.email, role: user.role });
+  }
+  async function saveUser(event: React.FormEvent) {
+    event.preventDefault();
+    if (!userDraft || !userId) return;
+    setBusy(true); setMessage(null);
+    try {
+      const saved = await adminRequest<User>(`/api/admin/users/${userId}`, { method: "PATCH", body: JSON.stringify(userDraft) });
+      if (saved) setUsers((items) => items.map((item) => item.id === saved.id ? saved : item));
+      setUserDraft(null); setUserId(null);
+    } catch (error) { report(error); } finally { setBusy(false); }
   }
   async function removeUser(user: User) {
     if (!window.confirm(`Delete the account for ${user.name}?`)) return;
@@ -176,7 +201,7 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
 
           {message ? <div role="alert" className="mb-5 flex items-center justify-between rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800"><span>{message}</span><button onClick={() => setMessage(null)} aria-label="Dismiss"><X size={17} /></button></div> : null}
 
-          {section === "overview" ? <Overview products={products} categories={categories} users={users} inventoryValue={inventoryValue} totalStock={totalStock} onNavigate={selectSection} /> : null}
+          {section === "overview" ? <Overview products={products} categories={categories} users={users} inventoryValue={inventoryValue} totalStock={totalStock} cartItemCount={cartItemCount} wishlistItemCount={wishlistItemCount} onNavigate={selectSection} /> : null}
 
           {section === "products" ? (
             <DataPanel title="Product inventory" detail={`${visibleProducts.length} of ${products.length} products`}>
@@ -207,13 +232,15 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
 
           {section === "users" ? (
             <DataPanel title="Customer directory" detail={`${visibleUsers.length} registered accounts`}>
-              <AdminTable headers={["Customer", "Joined", "Access", "Status", ""]}>
+              <AdminTable headers={["Customer", "Joined", "Cart", "Saved", "Access", "Status", ""]}>
                 {visibleUsers.map((user) => <tr key={user.id} className="border-t border-slate-100 hover:bg-slate-50/70">
                   <td className="px-5 py-4"><div className="flex items-center gap-3"><span className={`grid size-10 place-items-center rounded-md text-sm font-bold ${user.role === "admin" ? "bg-violet-100 text-violet-700" : "bg-sky-100 text-sky-700"}`}>{user.name.slice(0, 2).toUpperCase()}</span><div><p className="font-semibold">{user.name}</p><p className="text-xs text-slate-500">{user.email}</p></div></div></td>
                   <td className="px-5 py-4 text-sm text-slate-500">{new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeZone: "UTC" }).format(new Date(user.createdAt))}</td>
+                  <td className="px-5 py-4"><CommerceCount icon={ShoppingCart} value={userCommerce.find((item) => item.userId === user.id)?.cart.reduce((total, item) => total + item.quantity, 0) ?? 0} /></td>
+                  <td className="px-5 py-4"><CommerceCount icon={Heart} value={userCommerce.find((item) => item.userId === user.id)?.wishlist.length ?? 0} /></td>
                   <td className="px-5 py-4"><select value={user.role} disabled={user.id === currentUser.id} onChange={(event) => changeRole(user, event.target.value as UserRole)} className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium outline-none focus:border-emerald-600 disabled:bg-slate-50 disabled:text-slate-400"><option value="customer">Customer</option><option value="admin">Administrator</option></select></td>
                   <td className="px-5 py-4"><span className="inline-flex items-center gap-2 text-sm font-medium text-emerald-700"><span className="size-2 rounded-full bg-emerald-500" />Active</span></td>
-                  <td className="px-5 py-4"><button type="button" disabled={user.id === currentUser.id} onClick={() => removeUser(user)} className="grid size-9 place-items-center rounded-md text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-20" title="Delete account" aria-label={`Delete ${user.name}`}><Trash2 size={17} /></button></td>
+                  <td className="px-5 py-4"><div className="flex justify-end gap-1"><button type="button" onClick={() => openUser(user)} className="rounded-lg px-3 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-50">View</button><button type="button" disabled={user.id === currentUser.id} onClick={() => removeUser(user)} className="grid size-9 place-items-center rounded-md text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-20" title="Delete account" aria-label={`Delete ${user.name}`}><Trash2 size={17} /></button></div></td>
                 </tr>)}
               </AdminTable>
             </DataPanel>
@@ -223,20 +250,23 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
 
       {productDraft ? <Editor title={productId ? "Edit product" : "Add a product"} subtitle="Keep storefront information accurate and complete." onClose={() => setProductDraft(null)}><form onSubmit={saveProduct} className="grid gap-4 sm:grid-cols-2"><Field label="Product name"><input required className={inputClass} value={productDraft.name} onChange={(e) => setProductDraft({ ...productDraft, name: e.target.value })} /></Field><Field label="URL slug"><input required className={inputClass} value={productDraft.slug} onChange={(e) => setProductDraft({ ...productDraft, slug: e.target.value })} /></Field><Field label="Category"><select required className={inputClass} value={productDraft.categoryId} onChange={(e) => setProductDraft({ ...productDraft, categoryId: e.target.value })}>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></Field><Field label="Product image"><CloudinaryImageField inputClassName={inputClass} value={productDraft.imageUrl} onChange={(imageUrl) => setProductDraft({ ...productDraft, imageUrl })} /></Field><Field label="Price"><input required type="number" min="0" step="0.01" className={inputClass} value={productDraft.price} onChange={(e) => setProductDraft({ ...productDraft, price: Number(e.target.value) })} /></Field><Field label="Stock"><input required type="number" min="0" className={inputClass} value={productDraft.stock} onChange={(e) => setProductDraft({ ...productDraft, stock: Number(e.target.value) })} /></Field><Field label="Rating"><input required type="number" min="0" max="5" step="0.1" className={inputClass} value={productDraft.rating} onChange={(e) => setProductDraft({ ...productDraft, rating: Number(e.target.value) })} /></Field><Field label="Tags"><input className={inputClass} value={productDraft.tags.join(", ")} onChange={(e) => setProductDraft({ ...productDraft, tags: e.target.value.split(",").map((tag) => tag.trim()).filter(Boolean) })} /></Field><div className="sm:col-span-2"><Field label="Description"><textarea required minLength={10} rows={4} className={`${inputClass} py-3`} value={productDraft.description} onChange={(e) => setProductDraft({ ...productDraft, description: e.target.value })} /></Field></div><FormActions busy={busy} onCancel={() => setProductDraft(null)} /></form></Editor> : null}
       {categoryDraft ? <Editor title={categoryId ? "Edit category" : "Add a category"} subtitle="Organize the catalog into clear storefront collections." onClose={() => setCategoryDraft(null)}><form onSubmit={saveCategory} className="grid gap-4"><Field label="Category name"><input required className={inputClass} value={categoryDraft.name} onChange={(e) => setCategoryDraft({ ...categoryDraft, name: e.target.value })} /></Field><Field label="URL slug"><input required className={inputClass} value={categoryDraft.slug} onChange={(e) => setCategoryDraft({ ...categoryDraft, slug: e.target.value })} /></Field><Field label="Cover image"><CloudinaryImageField inputClassName={inputClass} value={categoryDraft.imageUrl} onChange={(imageUrl) => setCategoryDraft({ ...categoryDraft, imageUrl })} /></Field><Field label="Description"><textarea required minLength={5} rows={4} className={`${inputClass} py-3`} value={categoryDraft.description} onChange={(e) => setCategoryDraft({ ...categoryDraft, description: e.target.value })} /></Field><FormActions busy={busy} onCancel={() => setCategoryDraft(null)} /></form></Editor> : null}
+      {userDraft && userId ? <UserEditor user={users.find((user) => user.id === userId) ?? null} commerce={userCommerce.find((item) => item.userId === userId)} currentUserId={currentUser.id} draft={userDraft} busy={busy} onDraftChange={setUserDraft} onClose={() => { setUserDraft(null); setUserId(null); }} onSubmit={saveUser} /> : null}
     </div>
   );
 }
 
-function Overview({ products, categories, users, inventoryValue, totalStock, onNavigate }: { products: Product[]; categories: Category[]; users: User[]; inventoryValue: number; totalStock: number; onNavigate: (section: Section) => void }) {
+function Overview({ products, categories, users, inventoryValue, totalStock, cartItemCount, wishlistItemCount, onNavigate }: { products: Product[]; categories: Category[]; users: User[]; inventoryValue: number; totalStock: number; cartItemCount: number; wishlistItemCount: number; onNavigate: (section: Section) => void }) {
   const stats = [
     { label: "Catalog value", value: `$${integerFormatter.format(inventoryValue)}`, note: `${totalStock} units in stock`, icon: CircleDollarSign, tone: "bg-emerald-50 text-emerald-700" },
     { label: "Active products", value: products.length.toString(), note: `${products.filter((item) => item.stock < 10).length} need attention`, icon: Boxes, tone: "bg-sky-50 text-sky-700" },
     { label: "Collections", value: categories.length.toString(), note: "Storefront categories", icon: Tags, tone: "bg-amber-50 text-amber-700" },
-    { label: "Customers", value: users.filter((user) => user.role === "customer").length.toString(), note: `${users.filter((user) => user.role === "admin").length} administrators`, icon: Users, tone: "bg-violet-50 text-violet-700" }
+    { label: "Customers", value: users.filter((user) => user.role === "customer").length.toString(), note: `${users.filter((user) => user.role === "admin").length} administrators`, icon: Users, tone: "bg-violet-50 text-violet-700" },
+    { label: "Cart items", value: cartItemCount.toString(), note: "Items currently saved in carts", icon: ShoppingCart, tone: "bg-orange-50 text-orange-700" },
+    { label: "Wishlist items", value: wishlistItemCount.toString(), note: "Products saved by customers", icon: Heart, tone: "bg-rose-50 text-rose-700" }
   ];
   const maxStock = Math.max(...products.map((product) => product.stock), 1);
   return <div className="space-y-7">
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{stats.map(({ label, value, note, icon: Icon, tone }) => <article key={label} className="group rounded-2xl border border-white bg-white/90 p-5 shadow-[0_12px_34px_rgba(15,23,42,0.06)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_42px_rgba(15,23,42,0.10)]"><div className="flex items-start justify-between"><span className={`grid size-11 place-items-center rounded-2xl ${tone}`}><Icon size={20} /></span><ArrowUpRight size={17} className="text-slate-300 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-slate-600" /></div><p className="mt-6 text-sm font-semibold text-slate-500">{label}</p><p className="mt-1.5 text-3xl font-bold tracking-tight">{value}</p><p className="mt-2 text-xs font-medium text-slate-400">{note}</p></article>)}</div>
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{stats.map(({ label, value, note, icon: Icon, tone }) => <article key={label} className="group rounded-2xl border border-white bg-white/90 p-5 shadow-[0_12px_34px_rgba(15,23,42,0.06)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_42px_rgba(15,23,42,0.10)]"><div className="flex items-start justify-between"><span className={`grid size-11 place-items-center rounded-2xl ${tone}`}><Icon size={20} /></span><ArrowUpRight size={17} className="text-slate-300 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-slate-600" /></div><p className="mt-6 text-sm font-semibold text-slate-500">{label}</p><p className="mt-1.5 text-3xl font-bold tracking-tight">{value}</p><p className="mt-2 text-xs font-medium text-slate-400">{note}</p></article>)}</div>
     <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
       <DataPanel title="Inventory health" detail="Stock distribution by product">
         <div className="space-y-5 p-5">{products.slice(0, 6).map((product) => <div key={product.id}><div className="mb-2 flex items-center justify-between gap-4 text-sm"><span className="truncate font-medium text-slate-700">{product.name}</span><span className="text-slate-500">{product.stock} units</span></div><div className="h-2 overflow-hidden rounded-full bg-slate-100"><div className={`h-full rounded-full ${product.stock < 10 ? "bg-[#ef8354]" : "bg-emerald-500"}`} style={{ width: `${Math.max(5, product.stock / maxStock * 100)}%` }} /></div></div>)}</div>
@@ -245,6 +275,41 @@ function Overview({ products, categories, users, inventoryValue, totalStock, onN
     </div>
   </div>;
 }
+
+function CommerceCount({ icon: Icon, value }: { icon: typeof ShoppingCart; value: number }) {
+  return <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700"><Icon size={13} className="text-slate-500" />{value}</span>;
+}
+
+function UserEditor({ user, commerce, currentUserId, draft, busy, onDraftChange, onClose, onSubmit }: { user: User | null; commerce?: UserCommerce; currentUserId: string; draft: UserDraft; busy: boolean; onDraftChange: (draft: UserDraft) => void; onClose: () => void; onSubmit: (event: React.FormEvent) => void }) {
+  if (!user) return null;
+  const cart = commerce?.cart ?? [];
+  const wishlist = commerce?.wishlist ?? [];
+  const subtotal = cart.reduce((total, item) => total + item.product.price * item.quantity, 0);
+  return <Editor title="Customer details" subtitle="Review account access and the products connected to this customer." onClose={onClose}>
+    <form onSubmit={onSubmit} className="space-y-7">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Full name"><input required minLength={2} className={inputClass} value={draft.name} onChange={(event) => onDraftChange({ ...draft, name: event.target.value })} /></Field>
+        <Field label="Email address"><input required type="email" className={inputClass} value={draft.email} onChange={(event) => onDraftChange({ ...draft, email: event.target.value })} /></Field>
+        <Field label="Access level"><select value={draft.role} disabled={user.id === currentUserId} className={inputClass} onChange={(event) => onDraftChange({ ...draft, role: event.target.value as UserRole })}><option value="customer">Customer</option><option value="admin">Administrator</option></select></Field>
+        <div className="grid grid-cols-2 gap-3 pt-7"><MetricMini label="Cart items" value={cart.reduce((total, item) => total + item.quantity, 0)} icon={ShoppingCart} /><MetricMini label="Saved" value={wishlist.length} icon={Heart} /></div>
+      </div>
+      <div className="grid gap-5 lg:grid-cols-2">
+        <CommercePanel title="Shopping cart" detail={cart.length ? `$${subtotal.toFixed(2)} subtotal` : "No items in cart"} icon={ShoppingCart}>
+          {cart.length ? cart.map((item) => <CommerceProduct key={item.productId} product={item.product} note={`Quantity: ${item.quantity} · $${(item.product.price * item.quantity).toFixed(2)}`} />) : <EmptyCommerce message="This customer has not added any products to their cart." />}
+        </CommercePanel>
+        <CommercePanel title="Wishlist" detail={wishlist.length ? `${wishlist.length} saved product${wishlist.length === 1 ? "" : "s"}` : "No saved products"} icon={Heart}>
+          {wishlist.length ? wishlist.map((item) => <CommerceProduct key={item.productId} product={item.product} note={`$${item.product.price.toFixed(2)} · ${item.product.categoryName}`} />) : <EmptyCommerce message="This customer has not saved any products yet." />}
+        </CommercePanel>
+      </div>
+      <FormActions busy={busy} onCancel={onClose} />
+    </form>
+  </Editor>;
+}
+
+function MetricMini({ label, value, icon: Icon }: { label: string; value: number; icon: typeof ShoppingCart }) { return <div className="rounded-xl border border-slate-200 bg-white px-3 py-2.5"><div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500"><Icon size={13} />{label}</div><p className="mt-1 text-xl font-bold text-slate-900">{value}</p></div>; }
+function CommercePanel({ title, detail, icon: Icon, children }: { title: string; detail: string; icon: typeof ShoppingCart; children: React.ReactNode }) { return <section className="overflow-hidden rounded-xl border border-slate-200 bg-white"><div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3"><span className="grid size-8 place-items-center rounded-lg bg-slate-100 text-slate-600"><Icon size={16} /></span><div><h3 className="text-sm font-bold text-slate-900">{title}</h3><p className="text-xs text-slate-500">{detail}</p></div></div><div className="max-h-64 divide-y divide-slate-100 overflow-y-auto">{children}</div></section>; }
+function CommerceProduct({ product, note }: { product: Product; note: string }) { return <div className="flex items-center gap-3 px-4 py-3"><Image src={product.imageUrl} alt="" width={40} height={40} className="size-10 rounded-lg object-cover" /><div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-800">{product.name}</p><p className="truncate text-xs text-slate-500">{note}</p></div></div>; }
+function EmptyCommerce({ message }: { message: string }) { return <p className="px-4 py-8 text-center text-sm leading-6 text-slate-500">{message}</p>; }
 
 function PrimaryButton({ onClick, icon: Icon, children }: { onClick: () => void; icon: typeof Plus; children: React.ReactNode }) { return <button type="button" onClick={onClick} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-emerald-700 px-4 text-sm font-bold text-white shadow-lg shadow-emerald-900/15 transition hover:-translate-y-0.5 hover:bg-emerald-800 hover:shadow-xl"><Icon size={18} />{children}</button>; }
 function DataPanel({ title, detail, children }: { title: string; detail: string; children: React.ReactNode }) { return <section className="overflow-hidden rounded-2xl border border-white bg-white/90 shadow-[0_12px_34px_rgba(15,23,42,0.06)]"><div className="flex items-center justify-between border-b border-slate-100 px-6 py-5"><div><h2 className="font-bold tracking-tight text-slate-900">{title}</h2><p className="mt-1 text-xs font-medium text-slate-400">{detail}</p></div></div>{children}</section>; }

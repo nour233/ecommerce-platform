@@ -65,6 +65,14 @@ export const adminService = {
     return userRepository.updateRole(userId, role);
   },
 
+  async updateUser(actorId: string, userId: string, input: { name: string; email: string; role: UserRole }) {
+    if (actorId === userId && input.role !== "admin") {
+      throw new AppError("You cannot remove your own administrator role", 409, "SELF_ROLE_CHANGE");
+    }
+    await userRepository.updateProfile(userId, input.name, input.email);
+    return userRepository.updateRole(userId, input.role);
+  },
+
   async deleteUser(actorId: string, userId: string) {
     if (actorId === userId) {
       throw new AppError("You cannot delete your own account", 409, "SELF_DELETE");

@@ -1,7 +1,7 @@
 import { currentAdmin } from "@/lib/api";
 import { toErrorResponse } from "@/lib/errors";
 import { adminService } from "@/lib/services/admin-service";
-import { adminUserRoleSchema } from "@/lib/validators";
+import { adminUserUpdateSchema } from "@/lib/validators";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -9,8 +9,8 @@ export async function PATCH(request: Request, { params }: Context) {
   try {
     const actor = await currentAdmin();
     const { id } = await params;
-    const { role } = adminUserRoleSchema.parse(await request.json());
-    return Response.json({ data: await adminService.updateUserRole(actor.id, id, role) });
+    const input = adminUserUpdateSchema.parse(await request.json());
+    return Response.json({ data: await adminService.updateUser(actor.id, id, input) });
   } catch (error) {
     return toErrorResponse(error);
   }

@@ -104,3 +104,9 @@ export const adminCategorySchema = z.object({
 export const adminUserRoleSchema = z.object({
   role: z.enum(["admin", "customer"])
 });
+
+export const adminUserUpdateSchema = z.object({
+  name: z.string().trim().min(2, "Name must contain at least 2 characters").max(80),
+  email: emailSchema,
+  role: z.enum(["admin", "customer"])
+});

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cartItemSchema, registerSchema, verificationCodeSchema } from "@/lib/validators";
+import { adminUserUpdateSchema, cartItemSchema, registerSchema, verificationCodeSchema } from "@/lib/validators";
 
 describe("request validation", () => {
   it("normalizes a valid registration email", () => {
@@ -17,5 +17,6 @@ describe("request validation", () => {
     expect(() => registerSchema.parse({ name: "Nour Slmi", email: "nour@example.com", password: "lowercaseonly1" })).toThrow();
     expect(() => cartItemSchema.parse({ productId: "", quantity: 0 })).toThrow();
     expect(() => verificationCodeSchema.parse({ email: "user@example.com", code: "123" })).toThrow();
+    expect(() => adminUserUpdateSchema.parse({ name: "N", email: "invalid", role: "owner" })).toThrow();
   });
 });
