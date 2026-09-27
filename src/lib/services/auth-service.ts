@@ -242,6 +242,7 @@ export const authService = {
       passwordSalt: verification.passwordSalt
     });
     await registrationVerificationRepository.delete(id);
+    await userRepository.touchPresence(user.id);
     await createSession(user.id);
     return user;
   },
@@ -254,6 +255,7 @@ export const authService = {
     if (!user || !valid) {
       throw new AppError("Invalid email or password", 401, "INVALID_CREDENTIALS");
     }
+    await userRepository.touchPresence(user.id);
     await createSession(user.id);
     return {
       id: user.id,

@@ -29,7 +29,8 @@ const toUser = (record: User): User => ({
   name: record.name,
   email: record.email,
   role: record.role ?? "customer",
-  createdAt: record.createdAt
+  createdAt: record.createdAt,
+  lastActiveAt: record.lastActiveAt
 });
 
 async function resolveUserIdByEmail(email: string) {
@@ -172,6 +173,20 @@ export const userRepository = {
     const record = await db.get<UserRecord>(keys.userPk(id), keys.userSk);
     if (!record) throw new AppError("User not found", 404, "USER_NOT_FOUND");
     await db.put({ ...record, ...credentials });
+  },
+
+  async touchPresence(id: string) {
+    const lastActiveAt = new Date().toISOString();
+    if (env.useMockDb) {
+      const user = store.users.find((candidate) => candidate.id === id);
+      if (!user) throw new AppError("User not found", 404, "USER_NOT_FOUND");
+      user.lastActiveAt = lastActiveAt;
+      return lastActiveAt;
+    }
+    const record = await db.get<UserRecord>(keys.userPk(id), keys.userSk);
+    if (!record) throw new AppError("User not found", 404, "USER_NOT_FOUND");
+    await db.put({ ...record, lastActiveAt });
+    return lastActiveAt;
   },
 
   async listUsers() {

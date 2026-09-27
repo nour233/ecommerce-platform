@@ -7,6 +7,7 @@ import { wishlistService } from "@/lib/services/wishlist-service";
 import { cartService } from "@/lib/services/cart-service";
 import { CartProvider } from "@/components/cart-provider";
 import { StoreFooter } from "@/components/store-footer";
+import { PresenceHeartbeat } from "@/components/presence-heartbeat";
 
 export const metadata: Metadata = {
   title: "CommerceCraft",
@@ -28,6 +29,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang="en" translate="no" className="notranslate" suppressHydrationWarning>
       <body>
+        {userId ? <PresenceHeartbeat /> : null}
         <WishlistProvider key={userId ?? "guest"} initialItems={wishlist}>
           <CartProvider key={userId ?? "guest"} initialCart={cart}>
             <Header />
