@@ -5,11 +5,15 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   ArrowUpRight,
+  Activity,
+  AlertTriangle,
   Boxes,
   BrainCircuit,
+  CheckCircle2,
   CircleDollarSign,
   ExternalLink,
   Heart,
+  Layers3,
   Lightbulb,
   LayoutDashboard,
   LogOut,
@@ -21,6 +25,7 @@ import {
   ShoppingCart,
   Sparkles,
   Tags,
+  Target,
   Trash2,
   TrendingUp,
   Users,
@@ -223,7 +228,7 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
 
           {message ? <div role="alert" className="mb-5 flex items-center justify-between rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800"><span>{message}</span><button onClick={() => setMessage(null)} aria-label="Dismiss"><X size={17} /></button></div> : null}
 
-          {section === "overview" ? <Overview products={products} categories={categories} users={users} inventoryValue={inventoryValue} totalStock={totalStock} cartItemCount={cartItemCount} wishlistItemCount={wishlistItemCount} insights={insights} onNavigate={selectSection} /> : null}
+          {section === "overview" ? <Overview products={products} categories={categories} userCommerce={userCommerce} inventoryValue={inventoryValue} totalStock={totalStock} cartItemCount={cartItemCount} wishlistItemCount={wishlistItemCount} insights={insights} onNavigate={selectSection} /> : null}
 
           {section === "products" ? (
             <DataPanel title="Product inventory" detail={`${visibleProducts.length} of ${products.length} products`}>
@@ -296,23 +301,46 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
   );
 }
 
-function Overview({ products, categories, users, inventoryValue, totalStock, cartItemCount, wishlistItemCount, insights, onNavigate }: { products: Product[]; categories: Category[]; users: User[]; inventoryValue: number; totalStock: number; cartItemCount: number; wishlistItemCount: number; insights: StoreInsight[]; onNavigate: (section: Section) => void }) {
+function Overview({ products, categories, userCommerce, inventoryValue, totalStock, cartItemCount, wishlistItemCount, insights, onNavigate }: { products: Product[]; categories: Category[]; userCommerce: UserCommerce[]; inventoryValue: number; totalStock: number; cartItemCount: number; wishlistItemCount: number; insights: StoreInsight[]; onNavigate: (section: Section) => void }) {
+  const lowStock = products.filter((item) => item.stock < 10);
+  const availableProducts = products.filter((item) => item.stock > 0).length;
+  const healthScore = products.length ? Math.round((availableProducts / products.length) * 65 + (lowStock.length === 0 ? 35 : Math.max(5, 35 - lowStock.length * 8))) : 0;
+  const categoryDistribution = categories.map((category) => ({ category, count: products.filter((product) => product.categoryId === category.id).length }));
+  const largestCollection = categoryDistribution.reduce((largest, item) => item.count > largest.count ? item : largest, categoryDistribution[0] ?? { category: null, count: 0 });
+  const engagement = products.map((product) => {
+    const carts = userCommerce.reduce((total, commerce) => total + commerce.cart.filter((item) => item.productId === product.id).reduce((quantity, item) => quantity + item.quantity, 0), 0);
+    const saves = userCommerce.reduce((total, commerce) => total + commerce.wishlist.filter((item) => item.productId === product.id).length, 0);
+    return { product, carts, saves, score: carts * 2 + saves };
+  }).sort((a, b) => b.score - a.score);
+  const demandLeader = engagement[0];
   const stats = [
-    { label: "Catalog value", value: `$${integerFormatter.format(inventoryValue)}`, note: `${totalStock} units in stock`, icon: CircleDollarSign, tone: "bg-emerald-50 text-emerald-700" },
-    { label: "Active products", value: products.length.toString(), note: `${products.filter((item) => item.stock < 10).length} need attention`, icon: Boxes, tone: "bg-sky-50 text-sky-700" },
-    { label: "Collections", value: categories.length.toString(), note: "Storefront categories", icon: Tags, tone: "bg-amber-50 text-amber-700" },
-    { label: "Customers", value: users.filter((user) => user.role === "customer").length.toString(), note: `${users.filter((user) => user.role === "admin").length} administrators`, icon: Users, tone: "bg-violet-50 text-violet-700" },
-    { label: "Cart items", value: cartItemCount.toString(), note: "Items currently saved in carts", icon: ShoppingCart, tone: "bg-orange-50 text-orange-700" },
-    { label: "Wishlist items", value: wishlistItemCount.toString(), note: "Products saved by customers", icon: Heart, tone: "bg-rose-50 text-rose-700" }
+    { label: "Catalog value", value: `$${integerFormatter.format(inventoryValue)}`, note: `${totalStock} units ready to sell`, icon: CircleDollarSign, tone: "bg-emerald-50 text-emerald-700" },
+    { label: "Catalog health", value: `${healthScore}%`, note: lowStock.length ? `${lowStock.length} stock risks detected` : "No stock risks detected", icon: Activity, tone: "bg-sky-50 text-sky-700" },
+    { label: "Customer intent", value: (cartItemCount + wishlistItemCount).toString(), note: `${cartItemCount} in carts · ${wishlistItemCount} saved`, icon: Target, tone: "bg-violet-50 text-violet-700" },
+    { label: "Collection coverage", value: `${categories.length}`, note: largestCollection.category ? `${largestCollection.category.name} leads with ${largestCollection.count}` : "Create your first collection", icon: Layers3, tone: "bg-orange-50 text-orange-700" }
   ];
   const maxStock = Math.max(...products.map((product) => product.stock), 1);
   return <div className="space-y-7">
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{stats.map(({ label, value, note, icon: Icon, tone }) => <article key={label} className="group rounded-2xl border border-white bg-white/90 p-5 shadow-[0_12px_34px_rgba(15,23,42,0.06)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_42px_rgba(15,23,42,0.10)]"><div className="flex items-start justify-between"><span className={`grid size-11 place-items-center rounded-2xl ${tone}`}><Icon size={20} /></span><ArrowUpRight size={17} className="text-slate-300 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-slate-600" /></div><p className="mt-6 text-sm font-semibold text-slate-500">{label}</p><p className="mt-1.5 text-3xl font-bold tracking-tight">{value}</p><p className="mt-2 text-xs font-medium text-slate-400">{note}</p></article>)}</div>
-    <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
-      <DataPanel title="Inventory health" detail="Stock distribution by product">
-        <div className="space-y-5 p-5">{products.slice(0, 6).map((product) => <div key={product.id}><div className="mb-2 flex items-center justify-between gap-4 text-sm"><span className="truncate font-medium text-slate-700">{product.name}</span><span className="text-slate-500">{product.stock} units</span></div><div className="h-2 overflow-hidden rounded-full bg-slate-100"><div className={`h-full rounded-full ${product.stock < 10 ? "bg-[#ef8354]" : "bg-emerald-500"}`} style={{ width: `${Math.max(5, product.stock / maxStock * 100)}%` }} /></div></div>)}</div>
+    <section className="relative overflow-hidden rounded-3xl bg-[#172033] p-6 text-white shadow-xl shadow-slate-900/15 sm:p-8">
+      <div className="absolute -right-20 -top-24 size-80 rounded-full bg-emerald-400/10 blur-3xl" /><div className="absolute -bottom-24 left-1/3 size-72 rounded-full bg-orange-400/10 blur-3xl" />
+      <div className="relative flex flex-col justify-between gap-8 xl:flex-row xl:items-end"><div className="max-w-2xl"><div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-400/10 px-3 py-1.5 text-xs font-bold text-emerald-200"><span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_0_4px_rgba(74,222,128,.12)]" />LIVE OPERATIONS</div><h2 className="mt-5 text-2xl font-bold tracking-tight sm:text-3xl">What deserves your attention today?</h2><p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">A decision layer built from your actual inventory, cart activity, saved products, and collection balance.</p></div><div className="grid grid-cols-2 gap-3 sm:grid-cols-3"><div className="rounded-2xl border border-white/10 bg-white/[.07] px-4 py-3"><p className="text-[10px] font-bold uppercase tracking-[.14em] text-slate-400">Sellable</p><p className="mt-1 text-2xl font-bold">{availableProducts}<span className="text-sm text-slate-400">/{products.length}</span></p></div><div className="rounded-2xl border border-white/10 bg-white/[.07] px-4 py-3"><p className="text-[10px] font-bold uppercase tracking-[.14em] text-slate-400">Risk queue</p><p className="mt-1 text-2xl font-bold text-orange-300">{lowStock.length}</p></div><div className="col-span-2 rounded-2xl border border-white/10 bg-white/[.07] px-4 py-3 sm:col-span-1"><p className="text-[10px] font-bold uppercase tracking-[.14em] text-slate-400">Demand leader</p><p className="mt-1 truncate text-sm font-bold">{demandLeader?.product.name ?? "No demand data yet"}</p></div></div></div>
+    </section>
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{stats.map(({ label, value, note, icon: Icon, tone }) => <article key={label} className="group rounded-2xl border border-white bg-white/90 p-5 shadow-[0_12px_34px_rgba(15,23,42,0.06)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_42px_rgba(15,23,42,0.10)]"><div className="flex items-start justify-between"><span className={`grid size-11 place-items-center rounded-2xl ${tone}`}><Icon size={20} /></span><ArrowUpRight size={17} className="text-slate-300 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-slate-600" /></div><p className="mt-6 text-sm font-semibold text-slate-500">{label}</p><p className="mt-1.5 text-3xl font-bold tracking-tight">{value}</p><p className="mt-2 text-xs font-medium text-slate-400">{note}</p></article>)}</div>
+    <div className="grid gap-6 xl:grid-cols-[1.15fr_.85fr]">
+      <DataPanel title="Action queue" detail="The next highest-impact actions for your storefront">
+        <div className="divide-y divide-slate-100">{[
+          { icon: lowStock.length ? AlertTriangle : CheckCircle2, tone: lowStock.length ? "bg-orange-50 text-orange-700" : "bg-emerald-50 text-emerald-700", title: lowStock.length ? `${lowStock.length} products need a stock decision` : "Inventory is healthy", detail: lowStock.length ? `${lowStock.slice(0, 2).map((product) => product.name).join(" and ")}${lowStock.length > 2 ? " need review." : " need review."}` : "All listed products are above the low-stock threshold.", action: "Open inventory", target: "products" as Section },
+          { icon: Heart, tone: "bg-rose-50 text-rose-700", title: demandLeader?.score ? `${demandLeader.product.name} has the strongest intent` : "Customer intent is still building", detail: demandLeader?.score ? `${demandLeader.carts} cart signals and ${demandLeader.saves} saves point to this product.` : "As customers add products to carts and wishlists, their signals appear here.", action: "Review products", target: "products" as Section },
+          { icon: Layers3, tone: "bg-sky-50 text-sky-700", title: largestCollection.category ? `${largestCollection.category.name} is your deepest collection` : "No collection balance yet", detail: largestCollection.category ? `${largestCollection.count} products are grouped here. Use complementary collections to improve discovery.` : "Create a category to give your catalog structure.", action: "Manage collections", target: "categories" as Section }
+        ].map(({ icon: Icon, tone, title, detail, action, target }) => <div key={title} className="flex items-start gap-4 p-5"><span className={`grid size-10 shrink-0 place-items-center rounded-xl ${tone}`}><Icon size={18} /></span><div className="min-w-0 flex-1"><h3 className="font-bold text-slate-900">{title}</h3><p className="mt-1 text-sm leading-6 text-slate-500">{detail}</p></div><button onClick={() => onNavigate(target)} className="shrink-0 rounded-lg px-3 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-50">{action}</button></div>)}</div>
       </DataPanel>
-      <div className="rounded-2xl bg-[#172033] p-6 text-white shadow-xl shadow-slate-900/15"><span className="grid size-11 place-items-center rounded-2xl bg-[#ef8354] shadow-lg shadow-orange-950/30"><Sparkles size={20} /></span><h2 className="mt-6 text-xl font-bold tracking-tight">Catalog control</h2><p className="mt-2 text-sm leading-6 text-slate-400">Keep product details, stock levels, collections and customer access current from one workspace.</p><div className="mt-6 space-y-2.5"><button onClick={() => onNavigate("products")} className="flex min-h-11 w-full items-center justify-between rounded-xl bg-white px-4 text-sm font-bold text-slate-950 shadow-sm transition hover:-translate-y-0.5">Manage inventory <ArrowUpRight size={17} /></button><button onClick={() => onNavigate("users")} className="flex min-h-11 w-full items-center justify-between rounded-xl border border-white/15 px-4 text-sm font-semibold text-white transition hover:bg-white/10">Review customers <ArrowUpRight size={17} /></button></div></div>
+      <section className="overflow-hidden rounded-2xl border border-white bg-white/90 shadow-[0_12px_34px_rgba(15,23,42,0.06)]"><div className="flex items-center justify-between border-b border-slate-100 px-6 py-5"><div><p className="text-[10px] font-bold uppercase tracking-[.14em] text-violet-600">Demand map</p><h2 className="mt-1 font-bold tracking-tight text-slate-900">Customer signals</h2></div><span className="grid size-10 place-items-center rounded-xl bg-violet-50 text-violet-700"><Target size={18} /></span></div><div className="space-y-4 p-5">{engagement.slice(0, 4).map(({ product, carts, saves, score }, index) => <div key={product.id} className="flex items-center gap-3"><span className="grid size-7 shrink-0 place-items-center rounded-lg bg-slate-100 text-xs font-bold text-slate-500">{index + 1}</span><Image src={product.imageUrl} alt="" width={40} height={40} className="size-10 rounded-lg object-cover" /><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold text-slate-800">{product.name}</p><p className="mt-0.5 text-xs text-slate-500">{carts} cart · {saves} saved</p></div><span className="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-bold text-violet-700">{score} pts</span></div>)}</div></section>
+    </div>
+    <div className="grid gap-6 xl:grid-cols-[1.2fr_.8fr]">
+      <DataPanel title="Inventory coverage" detail="Relative stock position across your catalog">
+        <div className="space-y-5 p-5">{products.slice(0, 6).map((product) => <div key={product.id}><div className="mb-2 flex items-center justify-between gap-4 text-sm"><span className="truncate font-medium text-slate-700">{product.name}</span><span className={product.stock < 10 ? "font-bold text-orange-600" : "text-slate-500"}>{product.stock} units</span></div><div className="h-2 overflow-hidden rounded-full bg-slate-100"><div className={`h-full rounded-full ${product.stock < 10 ? "bg-[#ef8354]" : "bg-emerald-500"}`} style={{ width: `${Math.max(5, product.stock / maxStock * 100)}%` }} /></div></div>)}</div>
+      </DataPanel>
+      <div className="rounded-2xl bg-gradient-to-br from-[#172033] to-[#243655] p-6 text-white shadow-xl shadow-slate-900/15"><span className="grid size-11 place-items-center rounded-2xl bg-[#ef8354] shadow-lg shadow-orange-950/30"><Sparkles size={20} /></span><h2 className="mt-6 text-xl font-bold tracking-tight">One workspace, clear decisions.</h2><p className="mt-2 text-sm leading-6 text-slate-300">Move from a signal to the exact operational screen where you can act on it.</p><div className="mt-6 space-y-2.5"><button onClick={() => onNavigate("products")} className="flex min-h-11 w-full items-center justify-between rounded-xl bg-white px-4 text-sm font-bold text-slate-950 shadow-sm transition hover:-translate-y-0.5">Manage inventory <ArrowUpRight size={17} /></button><button onClick={() => onNavigate("users")} className="flex min-h-11 w-full items-center justify-between rounded-xl border border-white/15 px-4 text-sm font-semibold text-white transition hover:bg-white/10">Review customers <ArrowUpRight size={17} /></button></div></div>
     </div>
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_34px_rgba(15,23,42,0.06)]">
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 px-6 py-5"><div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-xl bg-violet-50 text-violet-700"><BrainCircuit size={19} /></span><div><h2 className="font-bold tracking-tight text-slate-900">AI Store Insights</h2><p className="mt-1 text-xs font-medium text-slate-500">Recommendations generated from inventory, carts, and wishlist activity.</p></div></div><span className="inline-flex items-center gap-1.5 rounded-full bg-violet-50 px-3 py-1.5 text-xs font-bold text-violet-700"><Sparkles size={13} />Live analysis</span></div>
