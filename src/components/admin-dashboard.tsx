@@ -36,8 +36,9 @@ import { useRouter } from "next/navigation";
 import type { Category, Product, StoreInsight, User, UserCommerceData, UserRole } from "@/types";
 import { CloudinaryImageField } from "@/components/cloudinary-image-field";
 import { buildStoreInsights } from "@/lib/services/store-insights";
+import { CampaignStudio } from "@/components/campaign-studio";
 
-type Section = "overview" | "products" | "categories" | "users";
+type Section = "overview" | "products" | "categories" | "users" | "campaigns";
 type ProductDraft = Omit<Product, "id" | "categoryName" | "createdAt">;
 type CategoryDraft = Omit<Category, "id">;
 type UserDraft = Pick<User, "name" | "email" | "role">;
@@ -173,6 +174,7 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
   async function logout() { await fetch("/api/auth/logout", { method: "POST" }); router.push("/login"); router.refresh(); }
 
   const nav = [
+    { id: "campaigns" as const, label: "AI Campaigns", icon: Sparkles },
     { id: "overview" as const, label: "Overview", icon: LayoutDashboard },
     { id: "products" as const, label: "Products", icon: Boxes, count: products.length },
     { id: "categories" as const, label: "Categories", icon: Tags, count: categories.length },
@@ -229,6 +231,8 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
           {message ? <div role="alert" className="mb-5 flex items-center justify-between rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800"><span>{message}</span><button onClick={() => setMessage(null)} aria-label="Dismiss"><X size={17} /></button></div> : null}
 
           {section === "overview" ? <Overview products={products} categories={categories} userCommerce={userCommerce} inventoryValue={inventoryValue} totalStock={totalStock} cartItemCount={cartItemCount} wishlistItemCount={wishlistItemCount} insights={insights} onNavigate={selectSection} /> : null}
+
+          {section === "campaigns" ? <CampaignStudio products={products} categories={categories} /> : null}
 
           {section === "products" ? (
             <DataPanel title="Product inventory" detail={`${visibleProducts.length} of ${products.length} products`}>

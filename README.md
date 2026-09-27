@@ -18,6 +18,7 @@ CommerceCraft is a full-stack e-commerce application. Visitors can browse a cata
 - Administrator dashboard with product, category, user, cart, and wishlist management
 - AI Store Insights based on inventory, cart, and wishlist activity
 - Optional AI Product Copilot that creates editable catalog details from a product image
+- AI Campaign Generator with hosted Gemini generation (free-tier quotas apply), visual previews, editing, approval and storefront publication. See [setup and workflow](docs/ai-campaigns.md).
 - Loading, empty, validation, error, and not-found states
 
 ## Technologies Used
