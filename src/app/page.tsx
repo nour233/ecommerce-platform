@@ -19,7 +19,7 @@ export default async function HomePage() {
         <Image src="https://images.unsplash.com/photo-1556228453-efd6c1ff04f6?auto=format&fit=crop&w=2000&q=90" alt="A curated modern living room" fill priority className="object-cover object-center" />
         <div className="absolute inset-0 bg-[#111827]/65" />
         <div className={`relative h-full ${publishedCampaigns.length ? "grid lg:grid-cols-2" : "mx-auto flex max-w-[1500px] items-center px-4 sm:px-6 lg:px-8"}`}>
-          <div className={`flex items-center ${publishedCampaigns.length ? "px-4 sm:px-10 lg:px-16" : ""}`}><div className="max-w-2xl pb-10">
+          <div className={`items-center ${publishedCampaigns.length ? "hidden px-4 sm:px-10 lg:flex lg:px-16" : "flex"}`}><div className="max-w-2xl pb-10">
             <p className="flex items-center gap-2 text-sm font-semibold uppercase text-[#ffb38f]"><Sparkles size={16} /> The new everyday collection</p>
             <h1 className="mt-5 text-5xl font-bold leading-[1.05] sm:text-6xl lg:text-7xl">Better objects for everyday living.</h1>
             <p className="mt-6 max-w-xl text-lg leading-8 text-white/75">Thoughtful design, lasting materials and useful details. Discover pieces selected to make home, work and life feel considered.</p>
