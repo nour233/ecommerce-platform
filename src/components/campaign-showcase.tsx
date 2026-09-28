@@ -36,10 +36,11 @@ export function CampaignShowcase({ collections }: { collections: Collection[] })
   const [hero, ...others] = collection.products;
   const setPage = (index: number) => { setTurn(index > selected ? "next" : "previous"); setSelected(index); };
 
-  return <section aria-label="Campaign lookbook" className="overflow-hidden bg-[#eee9e0] px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
-    <div className="mx-auto max-w-[1440px]">
+  return <section aria-label="Campaign lookbook" className="relative overflow-hidden bg-[#eee9e0] px-3 py-5 sm:px-6 lg:px-10 lg:py-9 2xl:px-12">
+    <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-44 bg-[radial-gradient(ellipse_at_top,rgba(213,104,63,.12),transparent_65%)]" />
+    <div className="relative mx-auto max-w-[1760px]">
       <div className="mb-4 flex items-center justify-between gap-4"><p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-600"><Sparkles size={15} className="text-[#d5683f]" /> Campaign lookbook</p><p className="hidden text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 sm:block">Turn the page. Find your next favorite.</p></div>
-      <div className="relative rounded-[28px] bg-[#d8d0c3] p-2 shadow-[0_25px_80px_rgba(31,25,20,0.18)] sm:p-3">
+      <div className="relative rounded-[28px] bg-[#d8d0c3] p-2 shadow-[0_28px_90px_rgba(31,25,20,0.2)] sm:p-3 lg:p-4">
         <div className="relative overflow-hidden rounded-[22px] bg-[#fdfaf4]" role="region" aria-roledescription="carousel" aria-label={`Campaign ${selected + 1} of ${count}`}>
           <div className="pointer-events-none absolute bottom-0 left-1/2 top-0 z-20 hidden w-px bg-black/15 shadow-[-10px_0_24px_rgba(0,0,0,.16),10px_0_24px_rgba(0,0,0,.12)] lg:block" />
           <div key={collection.id} className={`grid lg:h-[620px] lg:grid-cols-2 ${turn === "next" ? "animate-[lookbook-next_.55s_ease-out]" : "animate-[lookbook-previous_.55s_ease-out]"}`}>
