@@ -15,7 +15,7 @@ export default async function HomePage() {
 
   return (
     <div className="bg-white">
-      {campaigns.length > 0 ? <CampaignShowcase collections={campaigns.slice(0, 3).map(({ id, title, description, bannerText, socialCaption, productIds, palette }) => ({ id, title, description, bannerText, socialCaption, productIds, palette, products: productIds.flatMap(id => { const p = products.find(p => p.id === id && p.stock > 0); return p ? [p] : []; }) }))} /> : <section className="relative isolate h-[72vh] min-h-[590px] max-h-[760px] overflow-hidden bg-[#172033] text-white">
+      {campaigns.length > 0 ? <CampaignShowcase collections={campaigns.slice(0, 3).map(({ id, title, description, bannerText, socialCaption, productIds, palette, updatedAt }) => ({ id, title, description, bannerText, socialCaption, productIds, palette, updatedAt, products: productIds.flatMap(id => { const p = products.find(p => p.id === id && p.stock > 0); return p ? [p] : []; }) }))} /> : <section className="relative isolate h-[72vh] min-h-[590px] max-h-[760px] overflow-hidden bg-[#172033] text-white">
         <Image src="https://images.unsplash.com/photo-1556228453-efd6c1ff04f6?auto=format&fit=crop&w=2000&q=90" alt="A curated modern living room" fill priority className="object-cover object-center" />
         <div className="absolute inset-0 bg-[#111827]/65" />
         <div className="relative mx-auto flex h-full max-w-[1500px] items-center px-4 sm:px-6 lg:px-8">
