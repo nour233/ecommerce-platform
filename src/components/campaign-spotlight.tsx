@@ -33,7 +33,7 @@ export function CampaignSpotlight({ campaigns }: { campaigns: SpotlightCampaign[
           <Link href="/campaigns" className="text-xs font-bold text-slate-700 underline underline-offset-4">View all campaigns</Link>
         </div>
         <div className="relative overflow-hidden rounded-2xl bg-[#172033] text-white shadow-[0_16px_35px_rgba(23,32,51,.16)]">
-          <div className="grid min-h-[270px] md:grid-cols-[1.1fr_.9fr]">
+          <div className="grid min-h-[310px] md:grid-cols-[1.05fr_.95fr]">
             <div className="relative z-10 flex flex-col justify-center px-7 py-8 sm:px-10">
               <div aria-hidden="true" className="absolute -left-16 top-1/2 size-72 -translate-y-1/2 rounded-full border-[38px] border-white/5" />
               <div className="relative">
@@ -43,10 +43,17 @@ export function CampaignSpotlight({ campaigns }: { campaigns: SpotlightCampaign[
                 <Link href={`/campaigns/${campaign.id}`} className="mt-5 inline-flex items-center gap-3 rounded-full bg-[#ef8354] px-5 py-3 text-sm font-bold transition hover:bg-[#ff9b70]">{campaign.bannerText}<ArrowRight size={16} /></Link>
               </div>
             </div>
-            <div className="relative min-h-[230px] bg-slate-800">
-              {hero ? <Image src={hero.imageUrl} alt={hero.name} fill sizes="(max-width: 768px) 100vw, 600px" className="object-cover" /> : null}
-              <div className="absolute inset-0 bg-gradient-to-r from-[#172033]/65 via-transparent to-transparent md:bg-gradient-to-t" />
-              {hero ? <span className="absolute bottom-4 right-4 rounded-full bg-white/95 px-4 py-2 text-xs font-bold text-slate-900">{hero.name}</span> : null}
+            <div className="grid min-h-[250px] grid-rows-[1.65fr_1fr] gap-2 bg-[#e9e4da] p-2 sm:p-3">
+              <div className="relative min-h-[155px] overflow-hidden rounded-xl bg-slate-800">
+                {hero ? <Image src={hero.imageUrl} alt={hero.name} fill sizes="(max-width: 768px) 100vw, 650px" className="object-cover" /> : null}
+                <div className="absolute inset-0 bg-gradient-to-r from-[#172033]/50 via-transparent to-transparent" />
+                {hero ? <div className="absolute bottom-3 left-3 rounded-lg bg-white/95 px-3 py-2 text-slate-900"><p className="text-[9px] font-bold uppercase tracking-[.16em] text-slate-500">Featured piece</p><p className="mt-0.5 text-xs font-bold">{hero.name}</p></div> : null}
+                <span className="absolute right-3 top-3 rounded-full bg-[#172033]/85 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[.14em] text-white">{campaign.products.length} pieces</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {campaign.products.slice(1, 4).map((product) => <Link key={product.id} href={`/products/${product.slug}`} className="group relative min-w-0 overflow-hidden rounded-lg bg-white"><Image src={product.imageUrl} alt={product.name} fill sizes="180px" className="object-cover transition duration-500 group-hover:scale-110" /><div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-2 pb-2 pt-7"><p className="truncate text-[10px] font-bold text-white">{product.name}</p></div></Link>)}
+                {campaign.products.length < 2 ? <div className="col-span-3 grid place-items-center rounded-lg bg-white px-3 text-center text-xs font-semibold text-slate-500">More products will be added to this collection soon.</div> : null}
+              </div>
             </div>
           </div>
           {count > 1 ? <>
