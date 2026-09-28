@@ -36,7 +36,7 @@ export default async function HomePage() {
         </div>
       </section>}
 
-      <section className="mx-auto max-w-[1500px] px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+      <section className="mx-auto max-w-[1500px] px-4 pb-16 pt-6 sm:px-6 lg:px-8 lg:pb-24 lg:pt-10">
         <div className="mb-10 flex items-end justify-between gap-6">
           <div><p className="text-sm font-semibold uppercase text-[#d65f3f]">Shop your way</p><h2 className="mt-2 max-w-2xl text-4xl font-bold leading-tight text-[#172033] sm:text-5xl">Collections for every part of your day.</h2></div>
           <Link href="/products" className="hidden items-center gap-2 border-b border-slate-900 pb-1 text-sm font-semibold sm:flex">View everything <ArrowRight size={16} /></Link>
