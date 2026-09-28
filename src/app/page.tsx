@@ -2,20 +2,23 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, BadgeCheck, PackageCheck, RefreshCcw, Sparkles } from "lucide-react";
 import { catalogRepository } from "@/lib/repositories/catalog";
+import { campaignRepository } from "@/lib/repositories/campaigns";
 import { ProductGrid } from "@/components/product-grid";
+import { CampaignHeroCard } from "@/components/campaign-hero-card";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [categories, products] = await Promise.all([catalogRepository.listCategories(), catalogRepository.listProducts()]);
+  const [categories, products, campaigns] = await Promise.all([catalogRepository.listCategories(), catalogRepository.listProducts(), campaignRepository.list()]);
   const featured = products.slice(0, 6);
+  const publishedCampaigns = campaigns.filter((campaign) => campaign.status === "published").sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)).map((campaign) => ({ ...campaign, products: campaign.productIds.flatMap((id) => { const product = products.find((item) => item.id === id && item.stock > 0); return product ? [product] : []; }) }));
 
   return (
     <div className="bg-white">
       <section className="relative isolate h-[72vh] min-h-[590px] max-h-[760px] overflow-hidden bg-[#172033] text-white">
         <Image src="https://images.unsplash.com/photo-1556228453-efd6c1ff04f6?auto=format&fit=crop&w=2000&q=90" alt="A curated modern living room" fill priority className="object-cover object-center" />
         <div className="absolute inset-0 bg-[#111827]/65" />
-        <div className="relative mx-auto flex h-full max-w-[1500px] items-center px-4 sm:px-6 lg:px-8">
+        <div className={`relative mx-auto grid h-full max-w-[1500px] items-center gap-10 px-4 sm:px-6 lg:px-8 ${publishedCampaigns.length ? "lg:grid-cols-[minmax(0,1fr)_410px]" : "lg:grid-cols-1"}`}>
           <div className="max-w-2xl pb-10">
             <p className="flex items-center gap-2 text-sm font-semibold uppercase text-[#ffb38f]"><Sparkles size={16} /> The new everyday collection</p>
             <h1 className="mt-5 text-5xl font-bold leading-[1.05] sm:text-6xl lg:text-7xl">Better objects for everyday living.</h1>
@@ -25,6 +28,7 @@ export default async function HomePage() {
               <Link href="/categories/home-living" className="inline-flex min-h-12 items-center rounded-md border border-white/35 px-6 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white hover:text-slate-950">Explore home</Link>
             </div>
           </div>
+          <div className="hidden lg:block"><CampaignHeroCard campaigns={publishedCampaigns} /></div>
         </div>
         <div className="absolute bottom-0 left-0 right-0 border-t border-white/15 bg-black/20 backdrop-blur-md">
           <div className="mx-auto grid max-w-[1500px] grid-cols-3 divide-x divide-white/15 px-4 sm:px-6 lg:px-8">
