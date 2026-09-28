@@ -51,12 +51,16 @@ const inputClass = "min-h-11 w-full rounded-xl border border-slate-200 bg-white 
 const integerFormatter = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
 const editableNumber = (value: number) => value === 0 ? "" : value;
 const parseEditableNumber = (value: string) => value === "" ? 0 : Number(value);
+const toSlug = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 100);
 
 async function adminRequest<T>(url: string, options: RequestInit): Promise<T | null> {
   const response = await fetch(url, { ...options, headers: options.body ? { "Content-Type": "application/json" } : undefined });
   if (response.status === 204) return null;
-  const payload = await response.json();
-  if (!response.ok) throw new Error(payload.error ?? "The operation failed");
+  const payload = await response.json() as { data?: T; error?: string; details?: { fieldErrors?: Record<string, string[] | undefined> } };
+  if (!response.ok) {
+    const firstFieldError = Object.values(payload.details?.fieldErrors ?? {}).flat().find(Boolean);
+    throw new Error(firstFieldError ?? payload.error ?? "The operation failed");
+  }
   return payload.data as T;
 }
 
@@ -299,7 +303,7 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
           </form>
         </Editor>
       ) : null}
-      {categoryDraft ? <Editor title={categoryId ? "Edit category" : "Add a category"} subtitle="Organize the catalog into clear storefront collections." onClose={() => setCategoryDraft(null)}><form onSubmit={saveCategory} className="grid gap-4"><Field label="Category name"><input required className={inputClass} value={categoryDraft.name} onChange={(e) => setCategoryDraft({ ...categoryDraft, name: e.target.value })} /></Field><Field label="URL slug"><input required className={inputClass} value={categoryDraft.slug} onChange={(e) => setCategoryDraft({ ...categoryDraft, slug: e.target.value })} /></Field><Field label="Cover image"><CloudinaryImageField inputClassName={inputClass} value={categoryDraft.imageUrl} onChange={(imageUrl) => setCategoryDraft({ ...categoryDraft, imageUrl })} /></Field><Field label="Description"><textarea required minLength={5} rows={4} className={`${inputClass} py-3`} value={categoryDraft.description} onChange={(e) => setCategoryDraft({ ...categoryDraft, description: e.target.value })} /></Field><FormActions busy={busy} onCancel={() => setCategoryDraft(null)} /></form></Editor> : null}
+      {categoryDraft ? <Editor title={categoryId ? "Edit category" : "Add a category"} subtitle="Organize the catalog into clear storefront collections." onClose={() => setCategoryDraft(null)}><form onSubmit={saveCategory} className="grid gap-4"><Field label="Category name"><input required className={inputClass} value={categoryDraft.name} onChange={(e) => setCategoryDraft({ ...categoryDraft, name: e.target.value, slug: categoryId ? categoryDraft.slug : toSlug(e.target.value) })} /></Field><Field label="URL slug"><input required className={inputClass} value={categoryDraft.slug} onChange={(e) => setCategoryDraft({ ...categoryDraft, slug: toSlug(e.target.value) })} /><p className="mt-1 text-xs text-slate-500">Created automatically from the category name. You can edit it.</p></Field><Field label="Cover image"><CloudinaryImageField inputClassName={inputClass} value={categoryDraft.imageUrl} onChange={(imageUrl) => setCategoryDraft({ ...categoryDraft, imageUrl })} /></Field><Field label="Description"><textarea required minLength={5} rows={4} className={`${inputClass} py-3`} value={categoryDraft.description} onChange={(e) => setCategoryDraft({ ...categoryDraft, description: e.target.value })} /></Field><FormActions busy={busy} onCancel={() => setCategoryDraft(null)} /></form></Editor> : null}
       {userDraft && userId ? <UserEditor user={users.find((user) => user.id === userId) ?? null} commerce={userCommerce.find((item) => item.userId === userId)} currentUserId={currentUser.id} draft={userDraft} busy={busy} onDraftChange={setUserDraft} onClose={() => { setUserDraft(null); setUserId(null); }} onSubmit={saveUser} /> : null}
     </div>
   );
