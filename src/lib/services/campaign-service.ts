@@ -5,6 +5,8 @@ import { campaignRepository } from "@/lib/repositories/campaigns";
 import { catalogRepository } from "@/lib/repositories/catalog";
 import { AppError } from "@/lib/errors";
 
+type CampaignGeneration = { content: z.infer<typeof campaignContentSchema>; source: "gemini" | "catalog-fallback" };
+
 async function validateProducts(ids: string[]) {
   const products = await catalogRepository.listProducts();
   if (ids.some(id => !products.some(p => p.id === id && p.stock > 0))) {
@@ -12,7 +14,33 @@ async function validateProducts(ids: string[]) {
   }
 }
 
-export async function generateCampaignContent(brief: CampaignBrief) {
+function catalogFallback(brief: CampaignBrief, products: Awaited<ReturnType<typeof catalogRepository.listProducts>>): CampaignGeneration {
+  const selected = products.slice(0, 4);
+  const productNames = selected.map(product => product.name).join(", ");
+  const keywords = brief.theme.trim().split(/\s+/).filter(Boolean).slice(0, 3).map(word => word.replace(/[^\p{L}\p{N}]/gu, "")).filter(Boolean);
+  const hashtag = keywords.map(word => `#${word.charAt(0).toUpperCase()}${word.slice(1).toLowerCase()}`).join(" ") || "#CommerceCraft";
+  const french = brief.language === "French";
+  const title = brief.theme.trim().replace(/\b\w/g, letter => letter.toUpperCase()).slice(0, 100);
+  const palette = products.some(product => /outdoor|pet|wellness/i.test(product.categoryName)) ? "forest" : products.some(product => /tech|workspace/i.test(product.categoryName)) ? "ocean" : "sunset";
+  const tone = brief.tone === "premium" ? (french ? "raffinée" : "refined") : brief.tone === "playful" ? (french ? "pleine d'énergie" : "full of energy") : (french ? "inspirante" : "inspiring");
+  return {
+    source: "catalog-fallback",
+    content: {
+      title,
+      description: french
+        ? `Une sélection ${tone} pensée pour ${brief.audience}. Découvrez ${productNames}, réunis pour donner à ${brief.theme.toLowerCase()} une allure simple, utile et mémorable.`
+        : `An ${tone} edit for ${brief.audience}. Discover ${productNames}, chosen to make ${brief.theme.toLowerCase()} feel easy, useful, and memorable.`,
+      bannerText: french ? `Explorer ${brief.theme}` : `Explore ${brief.theme}`,
+      socialCaption: french
+        ? `${brief.theme} est arrivée. Des pièces choisies pour accompagner vos moments préférés, avec style et simplicité. ${hashtag} #CommerceCraft`
+        : `${brief.theme} has arrived. Selected pieces for the moments you will want to repeat, with style and ease. ${hashtag} #CommerceCraft`,
+      productIds: selected.map(product => product.id),
+      palette
+    }
+  };
+}
+
+export async function generateCampaignContent(brief: CampaignBrief): Promise<CampaignGeneration> {
   const products = (await catalogRepository.listProducts())
     .filter(p => p.stock > 0 && (!brief.categoryId || p.categoryId === brief.categoryId))
     .sort((a, b) => b.rating - a.rating).slice(0, 60);
@@ -43,8 +71,14 @@ export async function generateCampaignContent(brief: CampaignBrief) {
   } catch {
     throw new AppError("The AI service is unavailable or timed out. Please try again.", 503, "CAMPAIGN_AI_UNAVAILABLE");
   }
-  if (response.status === 429) throw new AppError("The Gemini quota is exhausted. Try again when your free quota resets.", 429, "CAMPAIGN_AI_QUOTA");
-  if (!response.ok) throw new AppError("Gemini could not generate this campaign. Check the API key and model in your hosting settings.", 502, "CAMPAIGN_AI_FAILED");
+  if (!response.ok) {
+    const detail = await response.json().catch(() => null) as { error?: { code?: string; message?: string } } | null;
+    const message = detail?.error?.message ?? "";
+    if (response.status === 429 || detail?.error?.code === "too_many_requests" || /rate limit|quota/i.test(message)) {
+      throw new AppError("The Gemini free quota is temporarily busy.", 429, "CAMPAIGN_AI_QUOTA");
+    }
+    throw new AppError("Gemini could not generate this campaign. Check the API key and model in your hosting settings.", 502, "CAMPAIGN_AI_FAILED");
+  }
   try {
     const payload = await response.json();
     const text = (payload.steps ?? [])
@@ -54,7 +88,7 @@ export async function generateCampaignContent(brief: CampaignBrief) {
       .map((item: { text?: string }) => item.text ?? "").join("");
     const content = campaignContentSchema.parse(JSON.parse(text));
     if (content.productIds.some(id => !products.some(p => p.id === id))) throw new Error("Unknown product");
-    return content;
+    return { content, source: "gemini" };
   } catch {
     throw new AppError("The AI returned an incomplete campaign. Please generate again.", 502, "CAMPAIGN_AI_INVALID");
   }
@@ -63,10 +97,21 @@ export async function generateCampaignContent(brief: CampaignBrief) {
 export const campaignService = {
   async generate(input: unknown, adminId: string) {
     const brief = campaignBriefSchema.parse(input);
-    const content = await generateCampaignContent(brief);
+    const matchingProducts = (await catalogRepository.listProducts())
+      .filter(product => product.stock > 0 && (!brief.categoryId || product.categoryId === brief.categoryId))
+      .sort((a, b) => b.rating - a.rating);
+    let generated: CampaignGeneration;
+    try {
+      generated = await generateCampaignContent(brief);
+    } catch (error) {
+      if (!(error instanceof AppError) || !["CAMPAIGN_AI_QUOTA", "CAMPAIGN_AI_UNAVAILABLE", "CAMPAIGN_AI_FAILED"].includes(error.code)) throw error;
+      if (!matchingProducts.length) throw new AppError("No in-stock products match this brief.", 409, "NO_CAMPAIGN_PRODUCTS");
+      generated = catalogFallback(brief, matchingProducts);
+    }
+    const { content, source } = generated;
     await validateProducts(content.productIds);
     const now = new Date().toISOString();
-    return campaignRepository.save({ ...content, brief, id: randomUUID(), createdBy: adminId, status: "draft", version: 1, createdAt: now, updatedAt: now });
+    return campaignRepository.save({ ...content, brief, generationSource: source, id: randomUUID(), createdBy: adminId, status: "draft", version: 1, createdAt: now, updatedAt: now });
   },
   async mutate(id: string, input: z.infer<typeof campaignMutationSchema>) {
     const mutation = campaignMutationSchema.parse(input);

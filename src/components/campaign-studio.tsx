@@ -37,7 +37,7 @@ export function CampaignStudio({ products, categories }: { products: Product[]; 
   }
   async function generate(event: React.FormEvent) {
     event.preventDefault(); setBusy("generating"); setError(""); setNotice("");
-    try { update(await request<Campaign>("/api/admin/campaigns", { method: "POST", body: JSON.stringify(brief) })); setNotice("Campaign saved as a draft. Review the copy and product selection before approval."); }
+    try { const created = await request<Campaign>("/api/admin/campaigns", { method: "POST", body: JSON.stringify(brief) }); update(created); setNotice(created.generationSource === "catalog-fallback" ? "Gemini’s free quota is busy, so we created a smart catalog draft. Review and edit it before approval." : "Campaign saved as a draft. Review the copy and product selection before approval."); }
     catch (err) { setError(err instanceof Error ? err.message : "Generation failed"); }
     finally { setBusy(null); }
   }

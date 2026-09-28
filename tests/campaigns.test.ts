@@ -71,9 +71,12 @@ describe("campaign generation and publication", () => {
     await expect(campaignService.generate({ ...brief, categoryId: "missing" }, "admin")).rejects.toMatchObject({ code: "NO_CAMPAIGN_PRODUCTS" });
     expect(fetch).not.toHaveBeenCalled();
   });
-  it("reports unavailable local AI without pretending to generate content", async () => {
+  it("creates an editable catalog draft when the hosted AI is unavailable", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("ECONNREFUSED")));
-    await expect(campaignService.generate(brief, "admin")).rejects.toMatchObject({ code: "CAMPAIGN_AI_UNAVAILABLE" });
+    const result = await campaignService.generate(brief, "admin");
+    expect(result.generationSource).toBe("catalog-fallback");
+    expect(result.status).toBe("draft");
+    expect(result.productIds.length).toBeGreaterThan(0);
   });
   it("rejects duplicate products and invalid briefs", () => {
     expect(campaignContentSchema.safeParse({ ...content, productIds: [product.id, product.id] }).success).toBe(false);
