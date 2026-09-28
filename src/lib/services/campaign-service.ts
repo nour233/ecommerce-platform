@@ -49,8 +49,9 @@ function catalogFallback(brief: CampaignBrief, products: Awaited<ReturnType<type
 }
 
 export async function generateCampaignContent(brief: CampaignBrief): Promise<CampaignGeneration> {
+  const selectedCategoryIds = brief.categoryIds.length ? brief.categoryIds : brief.categoryId ? [brief.categoryId] : [];
   const products = (await catalogRepository.listProducts())
-    .filter(p => p.stock > 0 && (!brief.categoryId || p.categoryId === brief.categoryId))
+    .filter(p => p.stock > 0 && (!selectedCategoryIds.length || selectedCategoryIds.includes(p.categoryId)) && (!brief.productIds.length || brief.productIds.includes(p.id)))
     .sort((a, b) => b.rating - a.rating).slice(0, 60);
   if (!products.length) throw new AppError("No in-stock products match this brief.", 409, "NO_CAMPAIGN_PRODUCTS");
   const format = {
@@ -105,8 +106,9 @@ export async function generateCampaignContent(brief: CampaignBrief): Promise<Cam
 export const campaignService = {
   async generate(input: unknown, adminId: string) {
     const brief = campaignBriefSchema.parse(input);
+    const selectedCategoryIds = brief.categoryIds.length ? brief.categoryIds : brief.categoryId ? [brief.categoryId] : [];
     const matchingProducts = (await catalogRepository.listProducts())
-      .filter(product => product.stock > 0 && (!brief.categoryId || product.categoryId === brief.categoryId))
+      .filter(product => product.stock > 0 && (!selectedCategoryIds.length || selectedCategoryIds.includes(product.categoryId)) && (!brief.productIds.length || brief.productIds.includes(product.id)))
       .sort((a, b) => b.rating - a.rating);
     let generated: CampaignGeneration;
     try {

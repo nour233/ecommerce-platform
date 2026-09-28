@@ -14,7 +14,10 @@ export const campaignBriefSchema = z.object({
   audience: z.string().trim().min(2).max(200),
   tone: z.enum(["inspiring", "playful", "premium"]),
   language: z.enum(["English", "French"]),
-  categoryId: z.string().max(100).optional()
+  /** Kept while existing saved briefs migrate to categoryIds. */
+  categoryId: z.string().max(100).optional(),
+  categoryIds: z.array(z.string().min(1).max(100)).max(8).default([]),
+  productIds: z.array(z.string().min(1).max(100)).max(6).default([])
 });
 
 export type CampaignContent = z.infer<typeof campaignContentSchema>;
