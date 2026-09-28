@@ -7,8 +7,8 @@ import { useMemo, useState, type FormEvent } from "react";
 import {
   ArrowUpRight,
   ChevronDown,
-  Heart,
   Gem,
+  Heart,
   Menu,
   Search,
   ShoppingBag,
@@ -18,8 +18,6 @@ import {
   X
 } from "lucide-react";
 import { LogoutButton } from "@/components/logout-button";
-import { CartCount } from "@/components/cart-provider";
-import { WishlistCount } from "@/components/wishlist-provider";
 import type { Category, Product, User } from "@/types";
 
 type HeaderClientProps = {
@@ -33,6 +31,7 @@ export function HeaderClient({ user, categories, products }: HeaderClientProps) 
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [collectionsOpen, setCollectionsOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
   const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -101,23 +100,17 @@ export function HeaderClient({ user, categories, products }: HeaderClientProps) 
           <div className="hidden min-w-0 flex-1 px-2 lg:flex">{searchForm()}</div>
 
           <nav className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2" aria-label="Account navigation">
-            <Link href="/wishlist" className="relative flex min-h-11 items-center gap-2 rounded-md px-2 text-white transition hover:bg-white/10 sm:px-3" aria-label="Saved products">
-              <span className="relative"><Heart size={21} aria-hidden="true" /><span className="absolute -right-2.5 -top-2.5"><WishlistCount /></span></span>
-              <span className="hidden text-xs font-bold 2xl:inline">Saved</span>
-            </Link>
+            <Link href="/wishlist" className="grid size-11 place-items-center rounded-md text-white transition hover:bg-white/10" aria-label="Saved products" title="Saved products"><Heart size={21} aria-hidden="true" /></Link>
 
-            <Link href="/cart" className="relative flex min-h-11 items-center gap-2 rounded-md px-2 text-white transition hover:bg-white/10 sm:px-3" aria-label="Shopping cart">
-              <span className="relative"><ShoppingBag size={22} aria-hidden="true" /><span className="absolute -right-2.5 -top-2.5"><CartCount /></span></span>
-              <span className="hidden text-xs font-bold 2xl:inline">Cart</span>
-            </Link>
+            <Link href="/cart" className="grid size-11 place-items-center rounded-md text-white transition hover:bg-white/10" aria-label="Shopping cart" title="Shopping cart"><ShoppingBag size={22} aria-hidden="true" /></Link>
 
             {user ? (
-              <div className="ml-1 flex items-center gap-1 border-l border-white/15 pl-2">
-                <Link href="/profile" className="flex h-11 items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-2 transition hover:border-[#ff9d72] hover:bg-white/10 sm:px-2.5" title="Open your account">
+              <div className="relative ml-1 border-l border-white/15 pl-2">
+                <button type="button" onClick={() => setAccountOpen((open) => !open)} aria-expanded={accountOpen} aria-controls="account-menu" className="flex h-11 items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-2 transition hover:border-[#ff9d72] hover:bg-white/10 sm:px-2.5" title="Open account menu">
                   <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[#ef8354] text-[10px] font-bold text-[#172033]">{accountInitials}</span>
-                  <span className="hidden max-w-24 leading-tight xl:block"><span className="block text-[10px] text-white/55">My account</span><span className="block truncate text-xs font-bold">View profile</span></span>
-                </Link>
-                <LogoutButton tone="dark" />
+                  <span className="hidden max-w-24 leading-tight xl:block"><span className="block text-[10px] text-white/55">My account</span><span className="block truncate text-xs font-bold">{user.name}</span></span><ChevronDown size={15} className={`transition ${accountOpen ? "rotate-180" : ""}`} />
+                </button>
+                {accountOpen ? <div id="account-menu" className="absolute right-0 top-full z-50 mt-2 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white p-1.5 text-slate-900 shadow-[0_18px_45px_rgba(15,23,42,0.24)]"><Link onClick={() => setAccountOpen(false)} href="/profile" className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold hover:bg-[#fff2ec]"><UserRound size={16} />View profile</Link><div className="my-1 border-t border-slate-100" /><LogoutButton label /></div> : null}
               </div>
             ) : (
               <Link href="/login" className="ml-1 flex min-h-11 items-center gap-2 rounded-md border border-white/20 px-2.5 transition hover:border-[#ff9d72] hover:bg-white/10 sm:px-3">
