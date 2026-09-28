@@ -41,14 +41,16 @@ export const productAiService = {
 
     const categoryNames = categories.map((category) => category.name);
     const mimeType = imageUrl.toLowerCase().includes(".png") ? "image/png" : imageUrl.toLowerCase().includes(".webp") ? "image/webp" : "image/jpeg";
-    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": env.geminiApiKey,
-        "Api-Revision": "2026-05-20"
-      },
-      body: JSON.stringify({
+    let response: Response;
+    try {
+      response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": env.geminiApiKey,
+          "Api-Revision": "2026-05-20"
+        },
+        body: JSON.stringify({
         model: env.geminiProductAssistantModel,
         store: false,
         input: [
@@ -71,11 +73,18 @@ export const productAiService = {
             required: ["name", "description", "categoryName", "suggestedPrice", "tags"]
           }
         }
-      })
-    });
+        })
+      });
+    } catch {
+      throw new AppError("AI product suggestions are temporarily unavailable. You can complete the product details manually.", 503, "AI_UNAVAILABLE");
+    }
     const payload = await response.json() as GeminiResponse;
     if (!response.ok) {
-      throw new AppError(payload.error?.message ?? "Gemini could not analyze this image", 502, "AI_REQUEST_FAILED");
+      const message = payload.error?.message ?? "";
+      if (response.status === 429 || /rate limit|quota/i.test(message)) {
+        throw new AppError("Gemini’s free quota is busy. Your image is kept: complete the fields manually or try again shortly.", 429, "AI_QUOTA_EXCEEDED");
+      }
+      throw new AppError("Gemini could not analyze this image. You can complete the product details manually.", 502, "AI_REQUEST_FAILED");
     }
 
     let suggestion: z.infer<typeof productSuggestionSchema>;
