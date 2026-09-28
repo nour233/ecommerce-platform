@@ -1,4 +1,4 @@
-import { GetCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { DeleteCommand, GetCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { dynamo } from "@/lib/db/dynamo";
 import { env } from "@/lib/env";
 import { AppError } from "@/lib/errors";
@@ -54,5 +54,19 @@ export const campaignRepository = {
       throw error;
     }
     return campaign;
+  },
+  async remove(id: string, expectedVersion: number) {
+    if (env.useMockDb) {
+      const current = memory.get(id);
+      if (!current || current.version !== expectedVersion) throw conflict();
+      memory.delete(id);
+      return;
+    }
+    try {
+      await dynamo.send(new DeleteCommand({ TableName: env.tableName, Key: key(id), ConditionExpression: "#version = :version", ExpressionAttributeNames: { "#version": "version" }, ExpressionAttributeValues: { ":version": expectedVersion } }));
+    } catch (error) {
+      if (error instanceof Error && error.name === "ConditionalCheckFailedException") throw conflict();
+      throw error;
+    }
   }
 };

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Sparkles, Loader2, Check, Pencil, Send, Copy } from "lucide-react";
+import { Sparkles, Loader2, Check, Pencil, Send, Copy, Trash2 } from "lucide-react";
 import { CampaignBanner } from "@/components/campaign-banner";
 import { campaignContentSchema, type Campaign, type CampaignBrief, type CampaignContent } from "@/lib/campaign-schema";
 import type { Product, Category } from "@/types";
@@ -51,6 +51,13 @@ export function CampaignStudio({ products, categories }: { products: Product[]; 
     } catch (err) { setError(err instanceof Error ? err.message : "Unable to save campaign"); }
     finally { setBusy(null); }
   }
+  async function removeCampaign() {
+    if (!active || !window.confirm(`Delete “${active.title}”? This cannot be undone.`)) return;
+    setBusy("deleting"); setError(""); setNotice("");
+    try { await request<{ id: string }>(`/api/admin/campaigns/${active.id}`, { method: "DELETE", body: JSON.stringify({ version: active.version }) }); setCampaigns(items => items.filter(item => item.id !== active.id)); setActive(null); setEdit(null); setNotice("Campaign deleted. It has been removed from the storefront."); }
+    catch (err) { setError(err instanceof Error ? err.message : "Unable to delete campaign"); }
+    finally { setBusy(null); }
+  }
   const preview = edit ?? active;
   const selected = preview?.productIds.flatMap(id => { const p = products.find(p => p.id === id); return p ? [p] : []; }) ?? [];
   return <div className="space-y-6">
@@ -73,7 +80,7 @@ export function CampaignStudio({ products, categories }: { products: Product[]; 
           <button className={buttonClass} disabled={!!busy || active.status === "published"} onClick={() => setEdit(campaignContentSchema.parse(active))}><Pencil size={15} /> Edit</button>
           <button className={buttonClass} disabled={!!busy || active.status !== "draft"} onClick={() => mutate("approve")}><Check size={15} /> Approve</button>
           <button className={`${buttonClass} bg-emerald-700`} disabled={!!busy || active.status !== "approved"} onClick={() => mutate("publish")}><Send size={15} /> Publish</button>
-          {active.status === "published" && <><button className={buttonClass} disabled={!!busy} onClick={() => mutate("unpublish")}>Unpublish</button><Link className={buttonClass} href={`/campaigns/${active.id}`} target="_blank">View live</Link></>}
+          {active.status === "published" && <><button className={buttonClass} disabled={!!busy} onClick={() => mutate("unpublish")}>Unpublish</button><Link className={buttonClass} href={`/campaigns/${active.id}`} target="_blank">View live</Link></>}<button className={`${buttonClass} bg-red-600 hover:bg-red-700`} disabled={!!busy} onClick={() => void removeCampaign()}><Trash2 size={15} /> Delete</button>
         </>}</div></div>
         <CampaignBanner campaign={preview} products={selected} />
         {edit && <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5"><h3 className="font-bold">Edit campaign</h3><p className="text-xs text-slate-500">Saving changes resets approval. Published campaigns must be unpublished before editing.</p>{([['title', 'Title', 100], ['description', 'Description', 1200], ['bannerText', 'Banner text', 140], ['socialCaption', 'Social caption', 1500]] as const).map(([key, label, max]) => <label key={key} className="block text-sm font-medium">{label}<textarea className={inputClass} rows={key === "description" || key === "socialCaption" ? 3 : 2} maxLength={max} value={edit[key]} onChange={e => setEdit({ ...edit, [key]: e.target.value })} /></label>)}<label className="block text-sm font-medium">Banner palette<select className={inputClass} value={edit.palette} onChange={e => setEdit({ ...edit, palette: e.target.value as CampaignContent["palette"] })}><option value="sunset">Sunset</option><option value="ocean">Ocean</option><option value="forest">Forest</option></select></label><fieldset><legend className="mb-3 text-sm font-semibold">Product selection ({edit.productIds.length}/6)</legend><div className="max-h-64 space-y-2 overflow-auto">{products.map(p => <label key={p.id} className="flex items-center gap-3 rounded-lg bg-slate-50 p-3 text-sm"><input type="checkbox" checked={edit.productIds.includes(p.id)} disabled={!edit.productIds.includes(p.id) && (p.stock < 1 || edit.productIds.length >= 6)} onChange={e => setEdit({ ...edit, productIds: e.target.checked ? [...edit.productIds, p.id] : edit.productIds.filter(id => id !== p.id) })} />{p.name}<span className="ml-auto text-xs text-slate-500">{p.stock} in stock</span></label>)}</div></fieldset></div>}
