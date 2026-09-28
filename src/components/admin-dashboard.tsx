@@ -230,7 +230,7 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
 
           {message ? <div role="alert" className="mb-5 flex items-center justify-between rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800"><span>{message}</span><button onClick={() => setMessage(null)} aria-label="Dismiss"><X size={17} /></button></div> : null}
 
-          {section === "overview" ? <Overview products={products} categories={categories} userCommerce={userCommerce} inventoryValue={inventoryValue} totalStock={totalStock} cartItemCount={cartItemCount} wishlistItemCount={wishlistItemCount} insights={insights} onNavigate={selectSection} /> : null}
+          {section === "overview" ? <Overview products={products} categories={categories} users={users} userCommerce={userCommerce} inventoryValue={inventoryValue} totalStock={totalStock} cartItemCount={cartItemCount} wishlistItemCount={wishlistItemCount} insights={insights} onNavigate={selectSection} /> : null}
 
           {section === "campaigns" ? <CampaignStudio products={products} categories={categories} /> : null}
 
@@ -305,7 +305,7 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
   );
 }
 
-function Overview({ products, categories, userCommerce, inventoryValue, totalStock, cartItemCount, wishlistItemCount, insights, onNavigate }: { products: Product[]; categories: Category[]; userCommerce: UserCommerce[]; inventoryValue: number; totalStock: number; cartItemCount: number; wishlistItemCount: number; insights: StoreInsight[]; onNavigate: (section: Section) => void }) {
+function Overview({ products, categories, users, userCommerce, inventoryValue, totalStock, cartItemCount, wishlistItemCount, insights, onNavigate }: { products: Product[]; categories: Category[]; users: User[]; userCommerce: UserCommerce[]; inventoryValue: number; totalStock: number; cartItemCount: number; wishlistItemCount: number; insights: StoreInsight[]; onNavigate: (section: Section) => void }) {
   const lowStock = products.filter((item) => item.stock < 10);
   const availableProducts = products.filter((item) => item.stock > 0).length;
   const healthScore = products.length ? Math.round((availableProducts / products.length) * 65 + (lowStock.length === 0 ? 35 : Math.max(5, 35 - lowStock.length * 8))) : 0;
@@ -318,10 +318,14 @@ function Overview({ products, categories, userCommerce, inventoryValue, totalSto
   }).sort((a, b) => b.score - a.score);
   const demandLeader = engagement[0];
   const stats = [
+    { label: "Total users", value: users.length.toString(), note: `${users.filter(user => user.role === "customer").length} customer accounts`, icon: Users, tone: "bg-violet-50 text-violet-700" },
+    { label: "Total products", value: products.length.toString(), note: `${availableProducts} available to sell`, icon: Boxes, tone: "bg-emerald-50 text-emerald-700" },
+    { label: "Total categories", value: categories.length.toString(), note: largestCollection.category ? `${largestCollection.category.name} is the largest` : "Create your first category", icon: Tags, tone: "bg-orange-50 text-orange-700" },
+    { label: "Items in carts", value: cartItemCount.toString(), note: "Active purchase intent", icon: ShoppingCart, tone: "bg-sky-50 text-sky-700" },
+    { label: "Items in wishlists", value: wishlistItemCount.toString(), note: "Products customers saved", icon: Heart, tone: "bg-rose-50 text-rose-700" },
     { label: "Catalog value", value: `$${integerFormatter.format(inventoryValue)}`, note: `${totalStock} units ready to sell`, icon: CircleDollarSign, tone: "bg-emerald-50 text-emerald-700" },
     { label: "Catalog health", value: `${healthScore}%`, note: lowStock.length ? `${lowStock.length} stock risks detected` : "No stock risks detected", icon: Activity, tone: "bg-sky-50 text-sky-700" },
-    { label: "Customer intent", value: (cartItemCount + wishlistItemCount).toString(), note: `${cartItemCount} in carts · ${wishlistItemCount} saved`, icon: Target, tone: "bg-violet-50 text-violet-700" },
-    { label: "Collection coverage", value: `${categories.length}`, note: largestCollection.category ? `${largestCollection.category.name} leads with ${largestCollection.count}` : "Create your first collection", icon: Layers3, tone: "bg-orange-50 text-orange-700" }
+    { label: "Customer intent", value: (cartItemCount + wishlistItemCount).toString(), note: "Cart and wishlist activity", icon: Target, tone: "bg-violet-50 text-violet-700" }
   ];
   const maxStock = Math.max(...products.map((product) => product.stock), 1);
   return <div className="space-y-7">
