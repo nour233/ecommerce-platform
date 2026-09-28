@@ -18,8 +18,8 @@ export default async function HomePage() {
       <section className="relative isolate h-[72vh] min-h-[590px] max-h-[760px] overflow-hidden bg-[#172033] text-white">
         <Image src="https://images.unsplash.com/photo-1556228453-efd6c1ff04f6?auto=format&fit=crop&w=2000&q=90" alt="A curated modern living room" fill priority className="object-cover object-center" />
         <div className="absolute inset-0 bg-[#111827]/65" />
-        <div className={`relative mx-auto grid h-full max-w-[1500px] items-center gap-10 px-4 sm:px-6 lg:px-8 ${publishedCampaigns.length ? "lg:grid-cols-[minmax(0,1fr)_410px]" : "lg:grid-cols-1"}`}>
-          <div className="max-w-2xl pb-10">
+        <div className="relative mx-auto flex h-full max-w-[1500px] items-center px-4 sm:px-6 lg:px-8">
+          {publishedCampaigns.length ? <CampaignHeroCard campaigns={publishedCampaigns} /> : <div className="max-w-2xl pb-10">
             <p className="flex items-center gap-2 text-sm font-semibold uppercase text-[#ffb38f]"><Sparkles size={16} /> The new everyday collection</p>
             <h1 className="mt-5 text-5xl font-bold leading-[1.05] sm:text-6xl lg:text-7xl">Better objects for everyday living.</h1>
             <p className="mt-6 max-w-xl text-lg leading-8 text-white/75">Thoughtful design, lasting materials and useful details. Discover pieces selected to make home, work and life feel considered.</p>
@@ -27,8 +27,7 @@ export default async function HomePage() {
               <Link href="/products" className="inline-flex min-h-12 items-center gap-3 rounded-md bg-[#ef8354] px-6 text-sm font-bold text-white transition hover:bg-[#e76f51]">Shop the collection <ArrowRight size={18} /></Link>
               <Link href="/categories/home-living" className="inline-flex min-h-12 items-center rounded-md border border-white/35 px-6 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white hover:text-slate-950">Explore home</Link>
             </div>
-          </div>
-          <div className="hidden lg:block"><CampaignHeroCard campaigns={publishedCampaigns} /></div>
+          </div>}
         </div>
         <div className="absolute bottom-0 left-0 right-0 border-t border-white/15 bg-black/20 backdrop-blur-md">
           <div className="mx-auto grid max-w-[1500px] grid-cols-3 divide-x divide-white/15 px-4 sm:px-6 lg:px-8">
