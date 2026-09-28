@@ -7,17 +7,31 @@ import { ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
 import type { CampaignContent } from "@/lib/campaign-schema";
 import type { Product } from "@/types";
 
-type HeroCampaign = CampaignContent & { id: string; products: Product[] };
+type HeroCampaign = CampaignContent & { id: string; updatedAt: string; products: Product[] };
 
 /** Campaign copy layered directly on the home image, so the storefront has one clear hero. */
 export function CampaignHeroCard({ campaigns }: { campaigns: HeroCampaign[] }) {
   const [current, setCurrent] = useState(0);
   const count = campaigns.length;
+  const campaignFingerprint = campaigns.map((campaign) => `${campaign.id}:${campaign.updatedAt}`).join("|");
   useEffect(() => {
     if (count < 2) return;
     const timer = window.setInterval(() => setCurrent((value) => (value + 1) % count), 8000);
     return () => window.clearInterval(timer);
   }, [count]);
+  useEffect(() => {
+    const sync = async () => {
+      try {
+        const response = await fetch("/api/storefront/campaigns", { cache: "no-store" });
+        if (!response.ok) return;
+        const payload = await response.json() as { data?: Array<{ id: string; updatedAt: string }> };
+        const liveFingerprint = (payload.data ?? []).map((campaign) => `${campaign.id}:${campaign.updatedAt}`).join("|");
+        if (liveFingerprint !== campaignFingerprint) window.location.reload();
+      } catch { /* Keep the visible campaign if a temporary network error occurs. */ }
+    };
+    const timer = window.setInterval(() => void sync(), 8000);
+    return () => window.clearInterval(timer);
+  }, [campaignFingerprint]);
   if (!count) return null;
   const campaign = campaigns[current] ?? campaigns[0];
   const move = (change: number) => setCurrent((value) => (value + change + count) % count);
