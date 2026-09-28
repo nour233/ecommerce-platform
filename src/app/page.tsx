@@ -3,19 +3,16 @@ import Image from "next/image";
 import { ArrowRight, BadgeCheck, PackageCheck, RefreshCcw, Sparkles } from "lucide-react";
 import { catalogRepository } from "@/lib/repositories/catalog";
 import { ProductGrid } from "@/components/product-grid";
-import { campaignRepository } from "@/lib/repositories/campaigns";
-import { CampaignShowcase } from "@/components/campaign-showcase";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const [categories, products] = await Promise.all([catalogRepository.listCategories(), catalogRepository.listProducts()]);
   const featured = products.slice(0, 6);
-  const campaigns = (await campaignRepository.list()).filter(c => c.status === "published" && c.productIds.some(id => products.some(p => p.id === id && p.stock > 0))).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 
   return (
     <div className="bg-white">
-      {campaigns.length > 0 ? <CampaignShowcase collections={campaigns.slice(0, 3).map(({ id, title, description, bannerText, socialCaption, productIds, palette, updatedAt }) => ({ id, title, description, bannerText, socialCaption, productIds, palette, updatedAt, products: productIds.flatMap(id => { const p = products.find(p => p.id === id && p.stock > 0); return p ? [p] : []; }) }))} /> : <section className="relative isolate h-[72vh] min-h-[590px] max-h-[760px] overflow-hidden bg-[#172033] text-white">
+      <section className="relative isolate h-[72vh] min-h-[590px] max-h-[760px] overflow-hidden bg-[#172033] text-white">
         <Image src="https://images.unsplash.com/photo-1556228453-efd6c1ff04f6?auto=format&fit=crop&w=2000&q=90" alt="A curated modern living room" fill priority className="object-cover object-center" />
         <div className="absolute inset-0 bg-[#111827]/65" />
         <div className="relative mx-auto flex h-full max-w-[1500px] items-center px-4 sm:px-6 lg:px-8">
@@ -34,7 +31,7 @@ export default async function HomePage() {
             {["Curated essentials", "Secure checkout", "30-day returns"].map((text, index) => <div key={text} className="flex items-center justify-center gap-2 px-2 py-4 text-center text-[11px] font-semibold uppercase text-white/80 sm:text-xs">{index === 0 ? <BadgeCheck size={16} /> : index === 1 ? <PackageCheck size={16} /> : <RefreshCcw size={16} />}<span>{text}</span></div>)}
           </div>
         </div>
-      </section>}
+      </section>
 
       <section className="mx-auto max-w-[1500px] px-4 pb-16 pt-6 sm:px-6 lg:px-8 lg:pb-24 lg:pt-10">
         <div className="mb-10 flex items-end justify-between gap-6">
