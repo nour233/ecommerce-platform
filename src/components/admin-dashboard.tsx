@@ -82,6 +82,7 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
   const [productId, setProductId] = useState<string | null>(null);
   const [categoryDraft, setCategoryDraft] = useState<CategoryDraft | null>(null);
   const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [categoryProductsId, setCategoryProductsId] = useState<string | null>(null);
   const [userDraft, setUserDraft] = useState<UserDraft | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -257,9 +258,9 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
               {visibleCategories.map((category) => {
                 const count = products.filter((product) => product.categoryId === category.id).length;
-                return <article key={category.id} className="group overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+                return <article key={category.id} role="button" tabIndex={0} onClick={() => setCategoryProductsId(category.id)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setCategoryProductsId(category.id); } }} className="group cursor-pointer overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md">
                   <div className="relative aspect-[16/8] overflow-hidden"><Image src={category.imageUrl} alt={category.name} fill className="object-cover transition duration-500 group-hover:scale-105" /><div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" /><span className="absolute bottom-3 left-4 rounded-md bg-white/90 px-2 py-1 text-xs font-semibold text-slate-800 backdrop-blur">{count} products</span></div>
-                  <div className="flex items-start justify-between gap-4 p-5"><div><h2 className="text-lg font-bold">{category.name}</h2><p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-500">{category.description}</p></div><RowActions onEdit={() => openCategory(category)} onDelete={() => removeCategory(category)} /></div>
+                  <div className="flex items-start justify-between gap-4 p-5"><div><h2 className="text-lg font-bold">{category.name}</h2><p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-500">{category.description}</p><p className="mt-4 text-xs font-bold text-emerald-700">View {count} product{count === 1 ? "" : "s"} →</p></div><div onClick={(event) => event.stopPropagation()}><RowActions onEdit={() => openCategory(category)} onDelete={() => removeCategory(category)} /></div></div>
                 </article>;
               })}
             </div>
@@ -304,6 +305,7 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
         </Editor>
       ) : null}
       {categoryDraft ? <Editor title={categoryId ? "Edit category" : "Add a category"} subtitle="Organize the catalog into clear storefront collections." onClose={() => setCategoryDraft(null)}><form onSubmit={saveCategory} className="grid gap-4"><Field label="Category name"><input required className={inputClass} value={categoryDraft.name} onChange={(e) => setCategoryDraft({ ...categoryDraft, name: e.target.value, slug: categoryId ? categoryDraft.slug : toSlug(e.target.value) })} /></Field><Field label="URL slug"><input required className={inputClass} value={categoryDraft.slug} onChange={(e) => setCategoryDraft({ ...categoryDraft, slug: toSlug(e.target.value) })} /><p className="mt-1 text-xs text-slate-500">Created automatically from the category name. You can edit it.</p></Field><Field label="Cover image"><CloudinaryImageField inputClassName={inputClass} value={categoryDraft.imageUrl} onChange={(imageUrl) => setCategoryDraft({ ...categoryDraft, imageUrl })} /></Field><Field label="Description"><textarea required minLength={5} rows={4} className={`${inputClass} py-3`} value={categoryDraft.description} onChange={(e) => setCategoryDraft({ ...categoryDraft, description: e.target.value })} /></Field><FormActions busy={busy} onCancel={() => setCategoryDraft(null)} /></form></Editor> : null}
+      {categoryProductsId ? <CategoryProducts category={categories.find((category) => category.id === categoryProductsId) ?? null} products={products.filter((product) => product.categoryId === categoryProductsId)} onClose={() => setCategoryProductsId(null)} /> : null}
       {userDraft && userId ? <UserEditor user={users.find((user) => user.id === userId) ?? null} commerce={userCommerce.find((item) => item.userId === userId)} currentUserId={currentUser.id} draft={userDraft} busy={busy} onDraftChange={setUserDraft} onClose={() => { setUserDraft(null); setUserId(null); }} onSubmit={saveUser} /> : null}
     </div>
   );
@@ -367,6 +369,13 @@ function InsightCard({ insight }: { insight: StoreInsight }) {
   };
   const Icon = insight.id === "inventory" ? Boxes : insight.id === "demand" ? TrendingUp : Lightbulb;
   return <article className="p-5"><span className={`grid size-9 place-items-center rounded-xl ${styles[insight.tone]}`}><Icon size={17} /></span><h3 className="mt-4 text-sm font-bold leading-5 text-slate-900">{insight.title}</h3><p className="mt-2 text-sm leading-6 text-slate-500">{insight.description}</p></article>;
+}
+
+function CategoryProducts({ category, products, onClose }: { category: Category | null; products: Product[]; onClose: () => void }) {
+  if (!category) return null;
+  return <Editor title={category.name} subtitle={`${products.length} product${products.length === 1 ? "" : "s"} in this category`} onClose={onClose}>
+    {products.length ? <div className="grid gap-3 sm:grid-cols-2">{products.map((product) => <Link key={product.id} href={`/products/${product.slug}`} target="_blank" className="group flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 transition hover:border-emerald-300 hover:shadow-sm"><Image src={product.imageUrl} alt="" width={56} height={56} className="size-14 rounded-lg object-cover" /><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold text-slate-900">{product.name}</p><p className="mt-1 text-xs text-slate-500">${product.price.toFixed(2)} · {product.stock} in stock</p><p className="mt-2 text-xs font-bold text-emerald-700">Open product →</p></div></Link>)}</div> : <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-5 py-12 text-center"><p className="font-bold text-slate-800">No products in this category yet.</p><p className="mt-2 text-sm text-slate-500">Add products from the Products workspace to see them here.</p></div>}
+  </Editor>;
 }
 
 function CommerceCount({ icon: Icon, value }: { icon: typeof ShoppingCart; value: number }) {
