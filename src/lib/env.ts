@@ -18,5 +18,8 @@ export const env = {
   smtpPass: process.env.SMTP_PASS,
   mailFrom: process.env.MAIL_FROM,
   geminiApiKey: process.env.GEMINI_API_KEY,
-  geminiProductAssistantModel: process.env.GEMINI_PRODUCT_ASSISTANT_MODEL ?? "gemini-3.8-flash"
+  geminiProductAssistantModel: process.env.GEMINI_PRODUCT_ASSISTANT_MODEL ?? "gemini-3.8-flash",
+  groqApiKey: process.env.GROQ_API_KEY,
+  groqTextModel: process.env.GROQ_TEXT_MODEL ?? "qwen/qwen3.8-27b",
+  groqVisionModel: process.env.GROQ_VISION_MODEL ?? "qwen/qwen3.8-27b"
 } as const;

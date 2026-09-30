@@ -117,7 +117,10 @@ Repositories provide read, create, update, and delete operations. Cart and wishl
 | `MAIL_FROM` | Sender email address |
 | `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name used for image uploads |
 | `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET` | Unsigned Cloudinary upload preset used by the admin dashboard |
-| `GEMINI_API_KEY` | Free-tier Gemini key used by the optional AI Product Copilot |
+| `GEMINI_API_KEY` | Gemini key used by the optional AI Product Copilot and campaign generator |
+| `GROQ_API_KEY` | Optional Groq key. When present, Groq is used for both AI tools before Gemini. |
+| `GROQ_TEXT_MODEL` | Optional Groq text model override (defaults to `qwen/qwen3.8-27b`) |
+| `GROQ_VISION_MODEL` | Optional Groq vision model override (defaults to `qwen/qwen3.8-27b`) |
 | `GEMINI_PRODUCT_ASSISTANT_MODEL` | Vision model used by the Product Copilot; defaults to `gemini-3.8-flash` |
 | `AWS_ACCESS_KEY_ID` | AWS access key for cloud environments |
 | `AWS_SECRET_ACCESS_KEY` | AWS secret key for cloud environments |

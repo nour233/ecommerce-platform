@@ -16,6 +16,11 @@ type GeminiResponse = {
   error?: { message?: string };
 };
 
+type GroqResponse = {
+  choices?: Array<{ message?: { content?: string } }>;
+  error?: { message?: string };
+};
+
 const toSlug = (value: string) => value
   .normalize("NFD")
   .replace(/[\u0300-\u036f]/g, "")
@@ -34,27 +39,39 @@ function responseText(response: GeminiResponse) {
 
 export const productAiService = {
   async suggestFromImage(imageUrl: string, categories: Category[]) {
-    if (!env.geminiApiKey) {
-      throw new AppError("AI Product Copilot is not configured. Add GEMINI_API_KEY to local and Vercel environment variables.", 503, "AI_UNAVAILABLE");
+    if (!env.geminiApiKey && !env.groqApiKey) {
+      throw new AppError("AI Product Copilot is not configured. Add GROQ_API_KEY or GEMINI_API_KEY to local and Vercel environment variables.", 503, "AI_UNAVAILABLE");
     }
     if (!categories.length) throw new AppError("Create a category before using the AI Product Copilot", 409, "NO_CATEGORIES");
 
     const categoryNames = categories.map((category) => category.name);
     const mimeType = imageUrl.toLowerCase().includes(".png") ? "image/png" : imageUrl.toLowerCase().includes(".webp") ? "image/webp" : "image/jpeg";
     let response: Response;
+    let responseBody: GeminiResponse | GroqResponse;
+    const instructions = `You are an e-commerce catalog specialist. Analyze the product image and create accurate, concise storefront copy. Never invent brand names, technical specifications, certifications, or discounts that are not visible. Choose exactly one category from: ${categoryNames.join(", ")}. Generate a professional English product name, a two-sentence description, 3 to 8 concise tags, one allowed category name, and a realistic suggested USD price. Return JSON only.`;
     try {
-      response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
+      response = await fetch(env.groqApiKey ? "https://api.groq.com/openai/v1/chat/completions" : "https://generativelanguage.googleapis.com/v1beta/interactions", {
         method: "POST",
-        headers: {
+        headers: env.groqApiKey ? {
           "Content-Type": "application/json",
-          "x-goog-api-key": env.geminiApiKey,
+          Authorization: `Bearer ${env.groqApiKey}`
+        } : {
+          "Content-Type": "application/json",
+          "x-goog-api-key": env.geminiApiKey ?? "",
           "Api-Revision": "2026-05-20"
         },
-        body: JSON.stringify({
+        body: JSON.stringify(env.groqApiKey ? {
+          model: env.groqVisionModel,
+          messages: [
+            { role: "system", content: "You return only valid JSON." },
+            { role: "user", content: [{ type: "text", text: instructions }, { type: "image_url", image_url: { url: imageUrl } }] }
+          ],
+          response_format: { type: "json_object" }
+        } : {
         model: env.geminiProductAssistantModel,
         store: false,
         input: [
-          { type: "text", text: `You are an e-commerce catalog specialist. Analyze the product image and create accurate, concise storefront copy. Never invent brand names, technical specifications, certifications, or discounts that are not visible. Choose exactly one category from: ${categoryNames.join(", ")}. Generate a professional English product name, a two-sentence description, 3 to 8 concise tags, one allowed category name, and a realistic suggested USD price.` },
+          { type: "text", text: instructions },
           { type: "image", uri: imageUrl, mime_type: mimeType }
         ],
         response_format: {
@@ -78,18 +95,19 @@ export const productAiService = {
     } catch {
       throw new AppError("AI product suggestions are temporarily unavailable. You can complete the product details manually.", 503, "AI_UNAVAILABLE");
     }
-    const payload = await response.json() as GeminiResponse;
+    responseBody = await response.json() as GeminiResponse | GroqResponse;
     if (!response.ok) {
-      const message = payload.error?.message ?? "";
+      const message = responseBody.error?.message ?? "";
       if (response.status === 429 || /rate limit|quota/i.test(message)) {
-        throw new AppError("Gemini’s free quota is busy. Your image is kept: complete the fields manually or try again shortly.", 429, "AI_QUOTA_EXCEEDED");
+        throw new AppError("The AI provider is busy. Your image is kept: complete the fields manually or try again shortly.", 429, "AI_QUOTA_EXCEEDED");
       }
-      throw new AppError("Gemini could not analyze this image. You can complete the product details manually.", 502, "AI_REQUEST_FAILED");
+      throw new AppError("The AI provider could not analyze this image. You can complete the product details manually.", 502, "AI_REQUEST_FAILED");
     }
 
     let suggestion: z.infer<typeof productSuggestionSchema>;
     try {
-      suggestion = productSuggestionSchema.parse(JSON.parse(responseText(payload)));
+      const text = env.groqApiKey ? (responseBody as GroqResponse).choices?.[0]?.message?.content ?? "" : responseText(responseBody as GeminiResponse);
+      suggestion = productSuggestionSchema.parse(JSON.parse(text));
     } catch {
       throw new AppError("AI Product Copilot returned an invalid suggestion. Please try again.", 502, "AI_INVALID_RESPONSE");
     }

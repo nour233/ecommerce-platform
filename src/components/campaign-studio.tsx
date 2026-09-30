@@ -47,7 +47,7 @@ export function CampaignStudio({ products, categories }: { products: Product[]; 
   }
   async function generate(event: React.FormEvent) {
     event.preventDefault(); setBusy("generating"); setError(""); setNotice("");
-    try { const created = await request<Campaign>("/api/admin/campaigns", { method: "POST", body: JSON.stringify(brief) }); update(created); setNotice(created.generationSource === "catalog-fallback" ? "Gemini’s free quota is busy, so we created a smart catalog draft. Review and edit it before approval." : "Campaign saved as a draft. Review the copy and product selection before approval."); }
+    try { const created = await request<Campaign>("/api/admin/campaigns", { method: "POST", body: JSON.stringify(brief) }); update(created); setNotice(created.generationSource === "catalog-fallback" ? "The AI provider is busy, so we created a smart catalog draft. Review and edit it before approval." : "Campaign saved as a draft. Review the copy and product selection before approval."); }
     catch (err) { setError(err instanceof Error ? err.message : "Generation failed"); }
     finally { setBusy(null); }
   }
@@ -71,7 +71,7 @@ export function CampaignStudio({ products, categories }: { products: Product[]; 
   const preview = edit ?? active;
   const selected = preview?.productIds.flatMap(id => { const p = products.find(p => p.id === id); return p ? [p] : []; }) ?? [];
   return <div className="space-y-6">
-    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5"><p className="flex items-center gap-2 font-bold text-emerald-950"><Sparkles size={20} /> AI Campaign Generator</p><p className="mt-2 text-sm leading-6 text-emerald-900">Turn an idea into a complete collection: creative copy, selected products, a visual banner and a social caption. Powered by Gemini. Works on your hosted store; free-tier quotas apply.</p><p className="mt-1 text-xs text-emerald-800">Generate → Edit → Approve → Publish to your storefront</p></div>
+    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5"><p className="flex items-center gap-2 font-bold text-emerald-950"><Sparkles size={20} /> AI Campaign Generator</p><p className="mt-2 text-sm leading-6 text-emerald-900">Turn an idea into a complete collection: creative copy, selected products, a visual banner and a social caption. Powered by the configured AI provider. Works on your hosted store; provider limits may apply.</p><p className="mt-1 text-xs text-emerald-800">Generate → Edit → Approve → Publish to your storefront</p></div>
     {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{error}<button onClick={load} disabled={!!busy} className="ml-3 underline">Reload campaigns</button></div>}
     {notice && <p role="status" className="rounded-xl bg-emerald-50 p-4 text-sm text-emerald-900">{notice}</p>}
     <div className="grid items-start gap-6 xl:grid-cols-[320px_1fr]">
