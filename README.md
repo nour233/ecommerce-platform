@@ -118,6 +118,9 @@ Repositories provide read, create, update, and delete operations. Cart and wishl
 | `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name used for image uploads |
 | `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET` | Unsigned Cloudinary upload preset used by the admin dashboard |
 | `GEMINI_API_KEY` | Gemini key used by the optional AI Product Copilot and campaign generator |
+| `ANTHROPIC_API_KEY` | Optional Claude key. When present, Claude is used for both AI tools before Groq and Gemini. |
+| `ANTHROPIC_TEXT_MODEL` | Optional Claude text model override (defaults to `claude-haiku-4-5-20251001`) |
+| `ANTHROPIC_VISION_MODEL` | Optional Claude vision model override (defaults to `claude-haiku-4-5-20251001`) |
 | `GROQ_API_KEY` | Optional Groq key. When present, Groq is used for both AI tools before Gemini. |
 | `GROQ_TEXT_MODEL` | Optional Groq text model override (defaults to `qwen/qwen3.8-27b`) |
 | `GROQ_VISION_MODEL` | Optional Groq vision model override (defaults to `qwen/qwen3.8-27b`) |

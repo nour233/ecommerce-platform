@@ -21,6 +21,11 @@ type GroqResponse = {
   error?: { message?: string };
 };
 
+type AnthropicResponse = {
+  content?: Array<{ type?: string; text?: string }>;
+  error?: { message?: string };
+};
+
 const toSlug = (value: string) => value
   .normalize("NFD")
   .replace(/[\u0300-\u036f]/g, "")
@@ -39,20 +44,26 @@ function responseText(response: GeminiResponse) {
 
 export const productAiService = {
   async suggestFromImage(imageUrl: string, categories: Category[]) {
-    if (!env.geminiApiKey && !env.groqApiKey) {
-      throw new AppError("AI Product Copilot is not configured. Add GROQ_API_KEY or GEMINI_API_KEY to local and Vercel environment variables.", 503, "AI_UNAVAILABLE");
+    if (!env.geminiApiKey && !env.groqApiKey && !env.anthropicApiKey) {
+      throw new AppError("AI Product Copilot is not configured. Add ANTHROPIC_API_KEY, GROQ_API_KEY, or GEMINI_API_KEY to local and Vercel environment variables.", 503, "AI_UNAVAILABLE");
     }
     if (!categories.length) throw new AppError("Create a category before using the AI Product Copilot", 409, "NO_CATEGORIES");
 
     const categoryNames = categories.map((category) => category.name);
     const mimeType = imageUrl.toLowerCase().includes(".png") ? "image/png" : imageUrl.toLowerCase().includes(".webp") ? "image/webp" : "image/jpeg";
+    const useAnthropic = Boolean(env.anthropicApiKey);
+    const useGroq = !useAnthropic && Boolean(env.groqApiKey);
     let response: Response;
-    let responseBody: GeminiResponse | GroqResponse;
+    let responseBody: GeminiResponse | GroqResponse | AnthropicResponse;
     const instructions = `You are an e-commerce catalog specialist. Analyze the product image and create accurate, concise storefront copy. Never invent brand names, technical specifications, certifications, or discounts that are not visible. Choose exactly one category from: ${categoryNames.join(", ")}. Generate a professional English product name, a two-sentence description, 3 to 8 concise tags, one allowed category name, and a realistic suggested USD price. Return JSON only.`;
     try {
-      response = await fetch(env.groqApiKey ? "https://api.groq.com/openai/v1/chat/completions" : "https://generativelanguage.googleapis.com/v1beta/interactions", {
+      response = await fetch(useAnthropic ? "https://api.anthropic.com/v1/messages" : useGroq ? "https://api.groq.com/openai/v1/chat/completions" : "https://generativelanguage.googleapis.com/v1beta/interactions", {
         method: "POST",
-        headers: env.groqApiKey ? {
+        headers: useAnthropic ? {
+          "Content-Type": "application/json",
+          "x-api-key": env.anthropicApiKey ?? "",
+          "anthropic-version": "2023-06-01"
+        } : useGroq ? {
           "Content-Type": "application/json",
           Authorization: `Bearer ${env.groqApiKey}`
         } : {
@@ -60,7 +71,15 @@ export const productAiService = {
           "x-goog-api-key": env.geminiApiKey ?? "",
           "Api-Revision": "2026-05-20"
         },
-        body: JSON.stringify(env.groqApiKey ? {
+        body: JSON.stringify(useAnthropic ? {
+          model: env.anthropicVisionModel,
+          max_tokens: 600,
+          system: "You return only valid JSON.",
+          messages: [{ role: "user", content: [
+            { type: "image", source: { type: "url", url: imageUrl } },
+            { type: "text", text: instructions }
+          ] }]
+        } : useGroq ? {
           model: env.groqVisionModel,
           messages: [
             { role: "system", content: "You return only valid JSON." },
@@ -106,7 +125,10 @@ export const productAiService = {
 
     let suggestion: z.infer<typeof productSuggestionSchema>;
     try {
-      const text = env.groqApiKey ? (responseBody as GroqResponse).choices?.[0]?.message?.content ?? "" : responseText(responseBody as GeminiResponse);
+      const text = useAnthropic
+        ? (responseBody as AnthropicResponse).content?.filter((item) => item.type === "text").map((item) => item.text ?? "").join("") ?? ""
+        : useGroq ? (responseBody as GroqResponse).choices?.[0]?.message?.content ?? ""
+        : responseText(responseBody as GeminiResponse);
       suggestion = productSuggestionSchema.parse(JSON.parse(text));
     } catch {
       throw new AppError("AI Product Copilot returned an invalid suggestion. Please try again.", 502, "AI_INVALID_RESPONSE");
