@@ -42,6 +42,10 @@ function responseText(response: GeminiResponse) {
     .join("") ?? "";
 }
 
+function parseJsonResponse(text: string) {
+  return JSON.parse(text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, ""));
+}
+
 export const productAiService = {
   async suggestFromImage(imageUrl: string, categories: Category[]) {
     if (!env.geminiApiKey && !env.groqApiKey && !env.anthropicApiKey) {
@@ -129,7 +133,7 @@ export const productAiService = {
         ? (responseBody as AnthropicResponse).content?.filter((item) => item.type === "text").map((item) => item.text ?? "").join("") ?? ""
         : useGroq ? (responseBody as GroqResponse).choices?.[0]?.message?.content ?? ""
         : responseText(responseBody as GeminiResponse);
-      suggestion = productSuggestionSchema.parse(JSON.parse(text));
+      suggestion = productSuggestionSchema.parse(parseJsonResponse(text));
     } catch {
       throw new AppError("AI Product Copilot returned an invalid suggestion. Please try again.", 502, "AI_INVALID_RESPONSE");
     }

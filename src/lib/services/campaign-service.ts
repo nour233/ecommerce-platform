@@ -7,6 +7,10 @@ import { AppError } from "@/lib/errors";
 
 type CampaignGeneration = { content: z.infer<typeof campaignContentSchema>; source: "gemini" | "anthropic" | "groq" | "catalog-fallback" };
 
+function parseJsonResponse(text: string) {
+  return JSON.parse(text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, ""));
+}
+
 async function validateProducts(ids: string[]) {
   const products = await catalogRepository.listProducts();
   if (ids.some(id => !products.some(p => p.id === id && p.stock > 0))) {
@@ -114,7 +118,7 @@ export async function generateCampaignContent(brief: CampaignBrief): Promise<Cam
       .flatMap((step: { content?: Array<{ type?: string; text?: string }> }) => step.content ?? [])
       .filter((item: { type?: string }) => item.type === "text")
       .map((item: { text?: string }) => item.text ?? "").join("");
-    const content = campaignContentSchema.parse(JSON.parse(text));
+    const content = campaignContentSchema.parse(parseJsonResponse(text));
     if (content.productIds.some(id => !products.some(p => p.id === id))) throw new Error("Unknown product");
     return { content, source: useAnthropic ? "anthropic" : useGroq ? "groq" : "gemini" };
   } catch {
