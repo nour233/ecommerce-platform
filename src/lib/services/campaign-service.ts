@@ -81,7 +81,7 @@ export async function generateCampaignContent(brief: CampaignBrief): Promise<Cam
       method: "POST", headers: useAnthropic ? { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" } : useGroq ? { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` } : { "Content-Type": "application/json", "x-goog-api-key": apiKey, "Api-Revision": "2026-05-20" }, signal: AbortSignal.timeout(50_000),
       body: JSON.stringify(useAnthropic ? {
         model: process.env.ANTHROPIC_TEXT_MODEL ?? "claude-haiku-4-5-20251001",
-        max_tokens: 480,
+        max_tokens: 1_200,
         system: systemPrompt,
         messages: [{ role: "user", content: input }]
       } : useGroq ? {
