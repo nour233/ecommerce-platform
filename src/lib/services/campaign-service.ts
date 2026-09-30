@@ -77,7 +77,9 @@ export async function generateCampaignContent(brief: CampaignBrief): Promise<Cam
       body: JSON.stringify(useGroq ? {
         model: process.env.GROQ_TEXT_MODEL ?? "qwen/qwen3.8-27b",
         messages: [{ role: "system", content: systemPrompt }, { role: "user", content: input }],
-        max_tokens: 1800,
+        // Groq's free tier allows at most 1,000 output tokens per minute.
+        // Campaign copy is intentionally concise, so 850 leaves enough room for JSON completion.
+        max_tokens: 850,
         response_format: {
           type: "json_schema",
           json_schema: { name: "campaign", strict: true, schema: format }
