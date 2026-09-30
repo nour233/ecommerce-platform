@@ -7,7 +7,7 @@ const productSuggestionSchema = z.object({
   name: z.string().trim().min(2).max(120),
   description: z.string().trim().min(10).max(1000),
   categoryName: z.string().trim().min(2).max(80),
-  suggestedPrice: z.number().min(0).max(1_000_000),
+  suggestedPrice: z.coerce.number().min(0).max(1_000_000),
   tags: z.array(z.string().trim().min(1).max(40)).min(1).max(8)
 });
 
@@ -59,7 +59,7 @@ export const productAiService = {
     const useGroq = !useAnthropic && Boolean(env.groqApiKey);
     let response: Response;
     let responseBody: GeminiResponse | GroqResponse | AnthropicResponse;
-    const instructions = `You are an e-commerce catalog specialist. Analyze the product image and create accurate, concise storefront copy. Never invent brand names, technical specifications, certifications, or discounts that are not visible. Choose exactly one category from: ${categoryNames.join(", ")}. Generate a professional English product name, a two-sentence description, 3 to 8 concise tags, one allowed category name, and a realistic suggested USD price. Return JSON only.`;
+    const instructions = `You are an e-commerce catalog specialist. Analyze the product image and create accurate, concise storefront copy. Never invent brand names, technical specifications, certifications, or discounts that are not visible. Choose exactly one category from: ${categoryNames.join(", ")}. Return only a JSON object with exactly these fields: name (string), description (string), categoryName (one of the listed category names), suggestedPrice (number, without a currency symbol), and tags (array of 3 to 8 strings).`;
     try {
       response = await fetch(useAnthropic ? "https://api.anthropic.com/v1/messages" : useGroq ? "https://api.groq.com/openai/v1/chat/completions" : "https://generativelanguage.googleapis.com/v1beta/interactions", {
         method: "POST",
@@ -137,7 +137,7 @@ export const productAiService = {
     } catch {
       throw new AppError("AI Product Copilot returned an invalid suggestion. Please try again.", 502, "AI_INVALID_RESPONSE");
     }
-    const category = categories.find((item) => item.name === suggestion.categoryName);
+    const category = categories.find((item) => item.name.localeCompare(suggestion.categoryName, undefined, { sensitivity: "accent" }) === 0);
     if (!category) throw new AppError("AI selected an unavailable category. Please try again.", 502, "AI_INVALID_CATEGORY");
 
     return {
