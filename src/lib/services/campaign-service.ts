@@ -77,7 +77,11 @@ export async function generateCampaignContent(brief: CampaignBrief): Promise<Cam
       body: JSON.stringify(useGroq ? {
         model: process.env.GROQ_TEXT_MODEL ?? "qwen/qwen3.8-27b",
         messages: [{ role: "system", content: systemPrompt }, { role: "user", content: input }],
-        response_format: { type: "json_object" }
+        max_tokens: 1800,
+        response_format: {
+          type: "json_schema",
+          json_schema: { name: "campaign", strict: true, schema: format }
+        }
       } : { model: process.env.GEMINI_CAMPAIGN_MODEL ?? "gemini-3.8-flash", store: false,
         input: [
           { type: "text", text: systemPrompt },
