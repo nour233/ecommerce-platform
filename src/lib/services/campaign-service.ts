@@ -8,7 +8,26 @@ import { AppError } from "@/lib/errors";
 type CampaignGeneration = { content: z.infer<typeof campaignContentSchema>; source: "gemini" | "anthropic" | "groq" | "catalog-fallback" };
 
 function parseJsonResponse(text: string) {
-  return JSON.parse(text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, ""));
+  const cleaned = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+  const firstBrace = cleaned.indexOf("{");
+  const lastBrace = cleaned.lastIndexOf("}");
+  return JSON.parse(firstBrace >= 0 && lastBrace > firstBrace ? cleaned.slice(firstBrace, lastBrace + 1) : cleaned);
+}
+
+function normalizeCampaignResponse(value: unknown, products: Awaited<ReturnType<typeof catalogRepository.listProducts>>) {
+  if (!value || typeof value !== "object") return value;
+  const draft = { ...(value as Record<string, unknown>) };
+  const candidates = Array.isArray(draft.productIds) ? draft.productIds : Array.isArray(draft.products) ? draft.products : [];
+  draft.productIds = candidates.map((candidate) => {
+    const identifier = typeof candidate === "string" ? candidate : candidate && typeof candidate === "object"
+      ? String((candidate as Record<string, unknown>).id ?? (candidate as Record<string, unknown>).name ?? "")
+      : "";
+    return products.find((product) => product.id === identifier || product.name.localeCompare(identifier, undefined, { sensitivity: "accent" }) === 0)?.id ?? identifier;
+  });
+  if (typeof draft.palette === "string" && !["sunset", "ocean", "forest"].includes(draft.palette)) {
+    draft.palette = /ocean|blue|tech/i.test(draft.palette) ? "ocean" : /forest|green|wellness|outdoor/i.test(draft.palette) ? "forest" : "sunset";
+  }
+  return draft;
 }
 
 async function validateProducts(ids: string[]) {
@@ -118,7 +137,7 @@ export async function generateCampaignContent(brief: CampaignBrief): Promise<Cam
       .flatMap((step: { content?: Array<{ type?: string; text?: string }> }) => step.content ?? [])
       .filter((item: { type?: string }) => item.type === "text")
       .map((item: { text?: string }) => item.text ?? "").join("");
-    const content = campaignContentSchema.parse(parseJsonResponse(text));
+    const content = campaignContentSchema.parse(normalizeCampaignResponse(parseJsonResponse(text), products));
     if (content.productIds.some(id => !products.some(p => p.id === id))) throw new Error("Unknown product");
     return { content, source: useAnthropic ? "anthropic" : useGroq ? "groq" : "gemini" };
   } catch {
