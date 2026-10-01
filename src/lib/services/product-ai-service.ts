@@ -58,7 +58,6 @@ export const productAiService = {
     const useAnthropic = Boolean(env.anthropicApiKey);
     const useGroq = !useAnthropic && Boolean(env.groqApiKey);
     let response: Response;
-    let responseBody: GeminiResponse | GroqResponse | AnthropicResponse;
     const instructions = `You are an e-commerce catalog specialist. Analyze the product image and create accurate, concise storefront copy. Never invent brand names, technical specifications, certifications, or discounts that are not visible. Choose exactly one category from: ${categoryNames.join(", ")}. Return only a JSON object with exactly these fields: name (string), description (string), categoryName (one of the listed category names), suggestedPrice (number, without a currency symbol), and tags (array of 3 to 8 strings).`;
     try {
       response = await fetch(useAnthropic ? "https://api.anthropic.com/v1/messages" : useGroq ? "https://api.groq.com/openai/v1/chat/completions" : "https://generativelanguage.googleapis.com/v1beta/interactions", {
@@ -118,7 +117,7 @@ export const productAiService = {
     } catch {
       throw new AppError("AI product suggestions are temporarily unavailable. You can complete the product details manually.", 503, "AI_UNAVAILABLE");
     }
-    responseBody = await response.json() as GeminiResponse | GroqResponse;
+    const responseBody = await response.json() as GeminiResponse | GroqResponse | AnthropicResponse;
     if (!response.ok) {
       const message = responseBody.error?.message ?? "";
       if (response.status === 429 || /rate limit|quota/i.test(message)) {
