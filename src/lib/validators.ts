@@ -114,3 +114,10 @@ export const adminUserUpdateSchema = z.object({
 export const adminAiProductSchema = z.object({
   imageUrl: z.string().trim().url().refine((value) => value.startsWith("https://"), "Use a secure image URL")
 });
+
+export const storefrontChatSchema = z.object({
+  messages: z.array(z.object({
+    role: z.enum(["user", "assistant"]),
+    content: z.string().trim().min(1).max(600)
+  })).min(1).max(8)
+});

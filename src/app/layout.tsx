@@ -8,6 +8,7 @@ import { cartService } from "@/lib/services/cart-service";
 import { CartProvider } from "@/components/cart-provider";
 import { StoreFooter } from "@/components/store-footer";
 import { PresenceHeartbeat } from "@/components/presence-heartbeat";
+import { StoreChatWidget } from "@/components/store-chat-widget";
 
 export const metadata: Metadata = {
   title: "CommerceCraft",
@@ -35,6 +36,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             <Header />
             <main>{children}</main>
             <StoreFooter />
+            <StoreChatWidget />
           </CartProvider>
         </WishlistProvider>
       </body>
