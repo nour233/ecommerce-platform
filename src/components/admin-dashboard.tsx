@@ -8,6 +8,7 @@ import {
   Activity,
   AlertTriangle,
   Boxes,
+  BrainCircuit,
   CheckCircle2,
   ExternalLink,
   Heart,
@@ -32,6 +33,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { Category, Product, User, UserCommerceData, UserRole } from "@/types";
+import type { AdminAuditReport } from "@/lib/services/admin-audit-service";
 import { CloudinaryImageField } from "@/components/cloudinary-image-field";
 import { CampaignStudio } from "@/components/campaign-studio";
 
@@ -84,6 +86,8 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
   const [userId, setUserId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [aiGenerating, setAiGenerating] = useState(false);
+  const [audit, setAudit] = useState<AdminAuditReport | null>(null);
+  const [auditBusy, setAuditBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   const inventoryValue = useMemo(() => products.reduce((sum, product) => sum + product.price * product.stock, 0), [products]);
@@ -120,6 +124,11 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
       const suggestion = await adminRequest<AiProductSuggestion>("/api/admin/ai/product-details", { method: "POST", body: JSON.stringify({ imageUrl: sourceImage }) });
       if (suggestion) setProductDraft((current) => current ? { ...current, ...suggestion, imageUrl: sourceImage } : current);
     } catch (error) { report(error); } finally { setAiGenerating(false); }
+  }
+  async function runStoreAudit() {
+    setAuditBusy(true); setMessage(null);
+    try { setAudit(await adminRequest<AdminAuditReport>("/api/admin/ai/store-audit", { method: "POST" })); }
+    catch (error) { report(error); } finally { setAuditBusy(false); }
   }
   async function removeProduct(product: Product) {
     if (!window.confirm(`Delete ${product.name}?`)) return;
@@ -231,7 +240,7 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
 
           {message ? <div role="alert" className="mb-5 flex items-center justify-between rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800"><span>{message}</span><button onClick={() => setMessage(null)} aria-label="Dismiss"><X size={17} /></button></div> : null}
 
-          {section === "overview" ? <Overview products={products} categories={categories} userCommerce={userCommerce} inventoryValue={inventoryValue} totalStock={totalStock} cartItemCount={cartItemCount} wishlistItemCount={wishlistItemCount} onNavigate={selectSection} /> : null}
+          {section === "overview" ? <Overview products={products} categories={categories} userCommerce={userCommerce} inventoryValue={inventoryValue} totalStock={totalStock} cartItemCount={cartItemCount} wishlistItemCount={wishlistItemCount} audit={audit} auditBusy={auditBusy} onAudit={runStoreAudit} onNavigate={selectSection} /> : null}
 
           {section === "campaigns" ? <CampaignStudio products={products} categories={categories} /> : null}
 
@@ -307,7 +316,7 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
   );
 }
 
-function Overview({ products, categories, userCommerce, inventoryValue, totalStock, cartItemCount, wishlistItemCount, onNavigate }: { products: Product[]; categories: Category[]; userCommerce: UserCommerce[]; inventoryValue: number; totalStock: number; cartItemCount: number; wishlistItemCount: number; onNavigate: (section: Section) => void }) {
+function Overview({ products, categories, userCommerce, inventoryValue, totalStock, cartItemCount, wishlistItemCount, audit, auditBusy, onAudit, onNavigate }: { products: Product[]; categories: Category[]; userCommerce: UserCommerce[]; inventoryValue: number; totalStock: number; cartItemCount: number; wishlistItemCount: number; audit: AdminAuditReport | null; auditBusy: boolean; onAudit: () => void; onNavigate: (section: Section) => void }) {
   const lowStock = products.filter((item) => item.stock < 10);
   const availableProducts = products.filter((item) => item.stock > 0).length;
   const healthScore = products.length ? Math.round((availableProducts / products.length) * 65 + (lowStock.length === 0 ? 35 : Math.max(5, 35 - lowStock.length * 8))) : 0;
@@ -334,6 +343,7 @@ function Overview({ products, categories, userCommerce, inventoryValue, totalSto
       <div className="relative grid gap-7 xl:grid-cols-[1.1fr_.9fr]"><div><div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-400/10 px-3 py-1.5 text-xs font-bold text-emerald-200"><span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_0_4px_rgba(74,222,128,.12)]" />RADAR COMMERCIAL EN DIRECT</div><h2 className="mt-5 text-2xl font-bold tracking-tight sm:text-3xl">Voici où votre boutique peut gagner aujourd’hui.</h2><p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">Le tableau combine stock, intérêt client et catalogue pour transformer les chiffres en prochaines actions.</p><button onClick={() => onNavigate("campaigns")} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#ef8354] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-orange-950/30 transition hover:-translate-y-0.5 hover:bg-[#dd6e41]"><Sparkles size={17} />Créer une opportunité avec l’IA</button></div><div className="grid grid-cols-3 gap-3"><div className="rounded-2xl border border-white/10 bg-white/[.07] px-4 py-4"><p className="text-[10px] font-bold uppercase tracking-[.14em] text-slate-400">Intention client</p><p className="mt-2 text-xl font-bold text-rose-200">{intentScore}%</p><p className="mt-1 text-xs text-slate-400">Paniers + favoris</p></div><div className="rounded-2xl border border-white/10 bg-white/[.07] px-4 py-4"><p className="text-[10px] font-bold uppercase tracking-[.14em] text-slate-400">Catalogue prêt</p><p className="mt-2 text-xl font-bold text-emerald-200">{campaignReadiness}%</p><p className="mt-1 text-xs text-slate-400">Produits disponibles</p></div><div className="rounded-2xl border border-white/10 bg-white/[.07] px-4 py-4"><p className="text-[10px] font-bold uppercase tracking-[.14em] text-slate-400">Signal fort</p><p className="mt-2 truncate text-sm font-bold">{demandLeader?.product.name ?? "À venir"}</p><p className="mt-1 text-xs text-slate-400">{demandLeader?.score ?? 0} signaux client</p></div></div></div>
     </section>
     <section><div className="mb-4 flex items-end justify-between gap-4"><div><p className="text-[10px] font-bold uppercase tracking-[.16em] text-emerald-700">Indicateurs intelligents</p><h2 className="mt-1 text-xl font-bold tracking-tight text-slate-900">Les signaux qui comptent</h2></div><p className="hidden text-xs font-medium text-slate-500 sm:block">Actualisé depuis votre catalogue et l’activité client</p></div><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{stats.map(({ label, value, note, icon: Icon, tone }) => <article key={label} className="group relative overflow-hidden rounded-2xl border border-white bg-white p-5 shadow-[0_12px_34px_rgba(15,23,42,0.06)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_42px_rgba(15,23,42,0.10)]"><div className={`absolute inset-x-0 top-0 h-1 ${tone.split(" ")[0]}`} /><div className="flex items-start justify-between"><span className={`grid size-11 place-items-center rounded-2xl ${tone}`}><Icon size={20} /></span><ArrowUpRight size={17} className="text-slate-300 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-slate-600" /></div><p className="mt-6 text-sm font-semibold text-slate-500">{label}</p><p className="mt-1.5 text-3xl font-bold tracking-tight">{value}</p><p className="mt-2 text-xs font-medium text-slate-400">{note}</p></article>)}</div></section>
+    <StoreAuditor report={audit} busy={auditBusy} onAudit={onAudit} onNavigate={onNavigate} />
     <div className="grid gap-6 xl:grid-cols-[1.15fr_.85fr]">
       <DataPanel title="Action queue" detail="The next highest-impact actions for your storefront">
         <div className="divide-y divide-slate-100">{[
@@ -396,6 +406,19 @@ function CommerceProduct({ product, note }: { product: Product; note: string }) 
 function EmptyCommerce({ message }: { message: string }) { return <p className="px-4 py-8 text-center text-sm leading-6 text-slate-500">{message}</p>; }
 
 function PrimaryButton({ onClick, icon: Icon, children }: { onClick: () => void; icon: typeof Plus; children: React.ReactNode }) { return <button type="button" onClick={onClick} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-emerald-700 px-4 text-sm font-bold text-white shadow-lg shadow-emerald-900/15 transition hover:-translate-y-0.5 hover:bg-emerald-800 hover:shadow-xl"><Icon size={18} />{children}</button>; }
+function StoreAuditor({ report, busy, onAudit, onNavigate }: { report: AdminAuditReport | null; busy: boolean; onAudit: () => void; onNavigate: (section: Section) => void }) {
+  const styles = {
+    priority: "border-orange-200 bg-orange-50 text-orange-800",
+    opportunity: "border-violet-200 bg-violet-50 text-violet-800",
+    quality: "border-sky-200 bg-sky-50 text-sky-800"
+  };
+  const labels: Record<Section, string> = { overview: "Vue d’ensemble", products: "Voir les produits", categories: "Voir les catégories", users: "Voir les clients", campaigns: "Créer une campagne" };
+  return <section className="overflow-hidden rounded-2xl border border-violet-100 bg-white shadow-[0_12px_34px_rgba(15,23,42,0.06)]">
+    <div className="flex flex-wrap items-center justify-between gap-4 border-b border-violet-100 bg-[linear-gradient(110deg,#f7f2ff,#ffffff_62%)] px-6 py-5"><div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-2xl bg-violet-600 text-white shadow-lg shadow-violet-900/20"><BrainCircuit size={21} /></span><div><p className="text-[10px] font-bold uppercase tracking-[.15em] text-violet-700">Assistant administrateur</p><h2 className="mt-0.5 font-bold tracking-tight text-slate-900">AI Store Auditor</h2><p className="mt-1 text-xs font-medium text-slate-500">Il détecte les problèmes du catalogue et les opportunités à traiter.</p></div></div><button type="button" disabled={busy} onClick={onAudit} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-violet-700 px-4 text-sm font-bold text-white shadow-lg shadow-violet-900/15 transition hover:-translate-y-0.5 hover:bg-violet-800 disabled:cursor-wait disabled:opacity-60"><Sparkles size={16} />{busy ? "Analyse en cours…" : report ? "Relancer l’audit" : "Analyser ma boutique"}</button></div>
+    {report ? <div className="p-5"><p className="rounded-xl bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-700">{report.summary}</p><div className="mt-4 grid gap-3 lg:grid-cols-3">{report.findings.map((finding, index) => <article key={`${finding.title}-${index}`} className={`rounded-xl border p-4 ${styles[finding.level]}`}><div className="flex items-center justify-between gap-3"><span className="text-[10px] font-bold uppercase tracking-[.13em]">{finding.level === "priority" ? "À traiter" : finding.level === "opportunity" ? "Opportunité" : "Qualité"}</span><Lightbulb size={16} /></div><h3 className="mt-3 text-sm font-bold leading-5">{finding.title}</h3><p className="mt-2 text-xs leading-5 opacity-80">{finding.detail}</p><button type="button" onClick={() => onNavigate(finding.action)} className="mt-4 text-xs font-bold underline underline-offset-4">{labels[finding.action]} →</button></article>)}</div><p className="mt-4 text-right text-[11px] font-medium text-slate-400">{report.source === "smart-audit" ? "Analyse calculée à partir de votre catalogue" : "Analyse générée par l’IA à partir de données anonymisées"}</p></div> : <div className="flex items-center gap-4 px-6 py-6 text-sm text-slate-600"><span className="grid size-10 shrink-0 place-items-center rounded-xl bg-violet-50 text-violet-700"><TrendingUp size={18} /></span><p>Cliquez une fois : l’IA vérifie les descriptions, le stock, les catégories et les signaux d’intérêt sans exposer les données personnelles des clients.</p></div>}
+  </section>;
+}
+
 function DataPanel({ title, detail, children }: { title: string; detail: string; children: React.ReactNode }) { return <section className="overflow-hidden rounded-2xl border border-white bg-white/90 shadow-[0_12px_34px_rgba(15,23,42,0.06)]"><div className="flex items-center justify-between border-b border-slate-100 px-6 py-5"><div><h2 className="font-bold tracking-tight text-slate-900">{title}</h2><p className="mt-1 text-xs font-medium text-slate-400">{detail}</p></div></div>{children}</section>; }
 function AdminTable({ headers, children }: { headers: string[]; children: React.ReactNode }) { return <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-left"><thead className="bg-slate-50/80 text-[10px] uppercase tracking-[0.12em] text-slate-400"><tr>{headers.map((header) => <th key={header} className="px-5 py-3.5 font-bold">{header}</th>)}</tr></thead><tbody>{children}</tbody></table></div>; }
 function StockBadge({ stock }: { stock: number }) { const style = stock === 0 ? "bg-red-50 text-red-700" : stock < 10 ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"; return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${style}`}>{stock === 0 ? "Out of stock" : `${stock} in stock`}</span>; }
