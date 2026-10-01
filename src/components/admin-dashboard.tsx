@@ -6,12 +6,10 @@ import { useMemo, useState } from "react";
 import {
   ArrowUpRight,
   Activity,
-  AlertTriangle,
   Boxes,
   BrainCircuit,
   ExternalLink,
   Heart,
-  Lightbulb,
   LayoutDashboard,
   LogOut,
   PackagePlus,
@@ -33,6 +31,7 @@ import type { Category, Product, User, UserCommerceData, UserRole } from "@/type
 import type { AdminAuditReport } from "@/lib/services/admin-audit-service";
 import { CloudinaryImageField } from "@/components/cloudinary-image-field";
 import { CampaignStudio } from "@/components/campaign-studio";
+import { AuditVisualBrief } from "@/components/audit-visual-brief";
 
 type Section = "overview" | "products" | "categories" | "users" | "campaigns";
 type ProductDraft = Omit<Product, "id" | "categoryName" | "createdAt">;
@@ -337,7 +336,7 @@ function Overview({ products, categories, userCommerce, inventoryValue, totalSto
       <div className="relative grid gap-7 xl:grid-cols-[1.1fr_.9fr]"><div><div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-400/10 px-3 py-1.5 text-xs font-bold text-emerald-200"><span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_0_4px_rgba(74,222,128,.12)]" />RADAR COMMERCIAL EN DIRECT</div><h2 className="mt-5 text-2xl font-bold tracking-tight sm:text-3xl">Voici où votre boutique peut gagner aujourd’hui.</h2><p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">Le tableau combine stock, intérêt client et catalogue pour transformer les chiffres en prochaines actions.</p><button onClick={() => onNavigate("campaigns")} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#ef8354] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-orange-950/30 transition hover:-translate-y-0.5 hover:bg-[#dd6e41]"><Sparkles size={17} />Créer une opportunité avec l’IA</button></div><div className="grid grid-cols-3 gap-3"><div className="rounded-2xl border border-white/10 bg-white/[.07] px-4 py-4"><p className="text-[10px] font-bold uppercase tracking-[.14em] text-slate-400">Intention client</p><p className="mt-2 text-xl font-bold text-rose-200">{intentScore}%</p><p className="mt-1 text-xs text-slate-400">Paniers + favoris</p></div><div className="rounded-2xl border border-white/10 bg-white/[.07] px-4 py-4"><p className="text-[10px] font-bold uppercase tracking-[.14em] text-slate-400">Catalogue prêt</p><p className="mt-2 text-xl font-bold text-emerald-200">{campaignReadiness}%</p><p className="mt-1 text-xs text-slate-400">Produits disponibles</p></div><div className="rounded-2xl border border-white/10 bg-white/[.07] px-4 py-4"><p className="text-[10px] font-bold uppercase tracking-[.14em] text-slate-400">Signal fort</p><p className="mt-2 truncate text-sm font-bold">{demandLeader?.product.name ?? "À venir"}</p><p className="mt-1 text-xs text-slate-400">{demandLeader?.score ?? 0} signaux client</p></div></div></div>
     </section>
     <section><div className="mb-4 flex items-end justify-between gap-4"><div><p className="text-[10px] font-bold uppercase tracking-[.16em] text-emerald-700">Indicateurs intelligents</p><h2 className="mt-1 text-xl font-bold tracking-tight text-slate-900">Les signaux qui comptent</h2></div><p className="hidden text-xs font-medium text-slate-500 sm:block">Actualisé depuis votre catalogue et l’activité client</p></div><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{stats.map(({ label, value, note, icon: Icon, tone }) => <article key={label} className="group relative overflow-hidden rounded-2xl border border-white bg-white p-5 shadow-[0_12px_34px_rgba(15,23,42,0.06)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_42px_rgba(15,23,42,0.10)]"><div className={`absolute inset-x-0 top-0 h-1 ${tone.split(" ")[0]}`} /><div className="flex items-start justify-between"><span className={`grid size-11 place-items-center rounded-2xl ${tone}`}><Icon size={20} /></span><ArrowUpRight size={17} className="text-slate-300 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-slate-600" /></div><p className="mt-6 text-sm font-semibold text-slate-500">{label}</p><p className="mt-1.5 text-3xl font-bold tracking-tight">{value}</p><p className="mt-2 text-xs font-medium text-slate-400">{note}</p></article>)}</div></section>
-    <StoreAuditor report={audit} busy={auditBusy} onAudit={onAudit} onNavigate={onNavigate} />
+    <StoreAuditor report={audit} products={products} userCommerce={userCommerce} busy={auditBusy} onAudit={onAudit} onNavigate={onNavigate} />
   </div>;
 }
 
@@ -384,29 +383,11 @@ function CommerceProduct({ product, note }: { product: Product; note: string }) 
 function EmptyCommerce({ message }: { message: string }) { return <p className="px-4 py-8 text-center text-sm leading-6 text-slate-500">{message}</p>; }
 
 function PrimaryButton({ onClick, icon: Icon, children }: { onClick: () => void; icon: typeof Plus; children: React.ReactNode }) { return <button type="button" onClick={onClick} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-emerald-700 px-4 text-sm font-bold text-white shadow-lg shadow-emerald-900/15 transition hover:-translate-y-0.5 hover:bg-emerald-800 hover:shadow-xl"><Icon size={18} />{children}</button>; }
-function StoreAuditor({ report, busy, onAudit, onNavigate }: { report: AdminAuditReport | null; busy: boolean; onAudit: () => void; onNavigate: (section: Section) => void }) {
+function StoreAuditor({ report, products, userCommerce, busy, onAudit, onNavigate }: { report: AdminAuditReport | null; products: Product[]; userCommerce: UserCommerce[]; busy: boolean; onAudit: () => void; onNavigate: (section: Section) => void }) {
   return <section className="overflow-hidden rounded-2xl border border-violet-100 bg-white shadow-[0_12px_34px_rgba(15,23,42,0.06)]">
     <div className="flex flex-wrap items-center justify-between gap-4 border-b border-violet-100 bg-[linear-gradient(110deg,#f7f2ff,#ffffff_62%)] px-6 py-5"><div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-2xl bg-violet-600 text-white shadow-lg shadow-violet-900/20"><BrainCircuit size={21} /></span><div><p className="text-[10px] font-bold uppercase tracking-[.15em] text-violet-700">Assistant administrateur</p><h2 className="mt-0.5 font-bold tracking-tight text-slate-900">AI Store Auditor</h2><p className="mt-1 text-xs font-medium text-slate-500">Il détecte les problèmes du catalogue et les opportunités à traiter.</p></div></div><button type="button" disabled={busy} onClick={onAudit} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-violet-700 px-4 text-sm font-bold text-white shadow-lg shadow-violet-900/15 transition hover:-translate-y-0.5 hover:bg-violet-800 disabled:cursor-wait disabled:opacity-60"><Sparkles size={16} />{busy ? "Analyse en cours…" : report ? "Relancer l’audit" : "Analyser ma boutique"}</button></div>
-    {report ? <div className="p-5"><AuditNarrative narrative={report.narrative} /><div className="mt-4 flex flex-wrap gap-3"><button type="button" onClick={() => onNavigate("products")} className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-200">Voir les produits →</button><button type="button" onClick={() => onNavigate("categories")} className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-200">Voir les catégories →</button><button type="button" onClick={() => onNavigate("campaigns")} className="rounded-lg bg-violet-100 px-3 py-2 text-xs font-bold text-violet-800 transition hover:bg-violet-200">Créer une campagne →</button></div><p className="mt-4 text-right text-[11px] font-medium text-slate-400">Analyse générée par {report.source === "anthropic" ? "Claude AI" : "Groq AI"} à partir de données anonymisées</p></div> : <div className="flex items-center gap-4 px-6 py-6 text-sm text-slate-600"><span className="grid size-10 shrink-0 place-items-center rounded-xl bg-violet-50 text-violet-700"><TrendingUp size={18} /></span><p>Cliquez une fois : l’IA vérifie les descriptions, le stock, les catégories et les signaux d’intérêt sans exposer les données personnelles des clients.</p></div>}
+    {report ? <div className="p-5"><AuditVisualBrief narrative={report.narrative} products={products} userCommerce={userCommerce} onProducts={() => onNavigate("products")} onCampaign={() => onNavigate("campaigns")} /><div className="mt-4 flex flex-wrap gap-3"><button type="button" onClick={() => onNavigate("products")} className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-200">Voir les produits →</button><button type="button" onClick={() => onNavigate("categories")} className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-200">Voir les catégories →</button><button type="button" onClick={() => onNavigate("campaigns")} className="rounded-lg bg-violet-100 px-3 py-2 text-xs font-bold text-violet-800 transition hover:bg-violet-200">Créer une campagne →</button></div><p className="mt-4 text-right text-[11px] font-medium text-slate-400">Analyse générée par {report.source === "anthropic" ? "Claude AI" : "Groq AI"} à partir de données anonymisées</p></div> : <div className="flex items-center gap-4 px-6 py-6 text-sm text-slate-600"><span className="grid size-10 shrink-0 place-items-center rounded-xl bg-violet-50 text-violet-700"><TrendingUp size={18} /></span><p>Cliquez une fois : l’IA vérifie les descriptions, le stock, les catégories et les signaux d’intérêt sans exposer les données personnelles des clients.</p></div>}
   </section>;
-}
-
-function AuditNarrative({ narrative }: { narrative: string }) {
-  const blocks = narrative.replace(/\r/g, "").split(/(?:^|\n)##\s+/).map((block) => block.trim()).filter(Boolean);
-  const sections = blocks.map((block) => {
-    const [heading = "Analyse", ...body] = block.split("\n");
-    return { heading: heading.replace(/^#\s*/, "").replace(/\*\*/g, "").trim(), body: body.join(" ").replace(/\*\*/g, "").replace(/\s+/g, " ").trim() };
-  }).filter((section) => section.body);
-  const cards = sections.length ? sections : [{ heading: "Analyse de la boutique", body: narrative.replace(/[#*]/g, "").replace(/\s+/g, " ").trim() }];
-  return <div className="grid gap-3 lg:grid-cols-3">{cards.slice(0, 3).map((section, index) => {
-    const title = section.heading.toLocaleLowerCase();
-    const priority = title.includes("priorit") || index === 0;
-    const opportunity = title.includes("opportun") || index === 1;
-    const style = priority ? "border-orange-200 bg-orange-50 text-orange-950" : opportunity ? "border-violet-200 bg-violet-50 text-violet-950" : "border-sky-200 bg-sky-50 text-sky-950";
-    const label = priority ? "À traiter maintenant" : opportunity ? "Opportunité détectée" : "Qualité du catalogue";
-    const Icon = priority ? AlertTriangle : opportunity ? TrendingUp : Lightbulb;
-    return <article key={`${section.heading}-${index}`} className={`rounded-2xl border p-5 ${style}`}><div className="flex items-center justify-between gap-3"><span className="text-[10px] font-bold uppercase tracking-[.14em]">{label}</span><span className="grid size-9 place-items-center rounded-xl bg-white/70 shadow-sm"><Icon size={17} /></span></div><h3 className="mt-5 text-base font-bold leading-5">{section.heading}</h3><p className="mt-3 text-sm leading-6 opacity-80">{section.body}</p></article>;
-  })}</div>;
 }
 
 function DataPanel({ title, detail, children }: { title: string; detail: string; children: React.ReactNode }) { return <section className="overflow-hidden rounded-2xl border border-white bg-white/90 shadow-[0_12px_34px_rgba(15,23,42,0.06)]"><div className="flex items-center justify-between border-b border-slate-100 px-6 py-5"><div><h2 className="font-bold tracking-tight text-slate-900">{title}</h2><p className="mt-1 text-xs font-medium text-slate-400">{detail}</p></div></div>{children}</section>; }
