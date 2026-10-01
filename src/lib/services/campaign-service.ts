@@ -192,9 +192,12 @@ export async function generateCampaignContent(brief: CampaignBrief): Promise<Cam
       .filter((item: { type?: string }) => item.type === "text")
       .map((item: { text?: string }) => item.text ?? "").join("");
     const content = campaignContentSchema.parse(normalizeCampaignResponse(parseJsonResponse(generatedText), products));
-    if (content.productIds.some(id => !products.some(p => p.id === id))) throw new Error("Unknown product");
+    if (content.productIds.some(id => !products.some(p => p.id === id))) {
+      throw new AppError("The AI suggested a product outside this catalog.", 502, "CAMPAIGN_AI_UNSAFE");
+    }
     return { content, source: useAnthropic ? "anthropic" : useGroq ? "groq" : "gemini" };
-  } catch {
+  } catch (error) {
+    if (error instanceof AppError) throw error;
     throw new AppError("The AI returned an incomplete campaign. Please generate again.", 502, "CAMPAIGN_AI_INVALID");
   }
 }
@@ -210,7 +213,7 @@ export const campaignService = {
     try {
       generated = await generateCampaignContent(brief);
     } catch (error) {
-      if (!(error instanceof AppError) || !["CAMPAIGN_AI_QUOTA", "CAMPAIGN_AI_UNAVAILABLE", "CAMPAIGN_AI_FAILED"].includes(error.code)) throw error;
+      if (!(error instanceof AppError) || !["CAMPAIGN_AI_QUOTA", "CAMPAIGN_AI_UNAVAILABLE", "CAMPAIGN_AI_FAILED", "CAMPAIGN_AI_INVALID"].includes(error.code)) throw error;
       if (!matchingProducts.length) throw new AppError("No in-stock products match this brief.", 409, "NO_CAMPAIGN_PRODUCTS");
       generated = catalogFallback(brief, matchingProducts);
     }

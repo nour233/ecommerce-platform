@@ -60,11 +60,11 @@ describe("campaign generation and publication", () => {
       await expect(campaignService.mutate(draft.id, { action: "publish", version: 2 })).rejects.toMatchObject({ code: "CAMPAIGN_PRODUCTS_UNAVAILABLE" });
     } finally { product.stock = stock; }
   });
-  it("rejects invented products and malformed model responses", async () => {
+  it("rejects invented products and completes malformed model responses with a catalog draft", async () => {
     ai({ ...content, productIds: ["invented-id"] });
-    await expect(campaignService.generate(brief, "admin")).rejects.toMatchObject({ code: "CAMPAIGN_AI_INVALID" });
+    await expect(campaignService.generate(brief, "admin")).rejects.toMatchObject({ code: "CAMPAIGN_AI_UNSAFE" });
     ai({ title: "Incomplete" });
-    await expect(campaignService.generate(brief, "admin")).rejects.toMatchObject({ code: "CAMPAIGN_AI_INVALID" });
+    await expect(campaignService.generate(brief, "admin")).resolves.toMatchObject({ generationSource: "catalog-fallback" });
   });
   it("rejects unavailable categories before calling the model", async () => {
     ai();
