@@ -22,7 +22,11 @@ function normalizeCampaignResponse(value: unknown, products: Awaited<ReturnType<
     : { ...envelope };
   if (typeof draft.theme === "string" && typeof draft.title !== "string") draft.title = draft.theme;
   if (typeof draft.banner === "string" && typeof draft.bannerText !== "string") draft.bannerText = draft.banner;
-  const candidates = Array.isArray(draft.productIds) ? draft.productIds : Array.isArray(draft.products) ? draft.products : [];
+  const candidates = Array.isArray(draft.productIds) ? draft.productIds
+    : Array.isArray(draft.selectedProductIds) ? draft.selectedProductIds
+    : Array.isArray(draft.selectedProducts) ? draft.selectedProducts
+    : Array.isArray(draft.products) ? draft.products
+    : [];
   const productIds = candidates.map((candidate) => {
     const identifier = typeof candidate === "string" ? candidate : candidate && typeof candidate === "object"
       ? String((candidate as Record<string, unknown>).id ?? (candidate as Record<string, unknown>).name ?? "")
@@ -152,12 +156,7 @@ export async function generateCampaignContent(brief: CampaignBrief): Promise<Cam
     const content = campaignContentSchema.parse(normalizeCampaignResponse(parseJsonResponse(generatedText), products));
     if (content.productIds.some(id => !products.some(p => p.id === id))) throw new Error("Unknown product");
     return { content, source: useAnthropic ? "anthropic" : useGroq ? "groq" : "gemini" };
-  } catch (error) {
-    console.error("Campaign AI response could not be validated", {
-      provider: useAnthropic ? "anthropic" : useGroq ? "groq" : "gemini",
-      reason: error instanceof Error ? error.message : "Unknown validation error",
-      responsePreview: generatedText.slice(0, 500)
-    });
+  } catch {
     throw new AppError("The AI returned an incomplete campaign. Please generate again.", 502, "CAMPAIGN_AI_INVALID");
   }
 }
