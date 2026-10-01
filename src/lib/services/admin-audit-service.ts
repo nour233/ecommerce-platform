@@ -20,8 +20,34 @@ export type AdminAuditReport = z.infer<typeof reportSchema> & { source: "anthrop
 type Activity = { cart: Array<{ productId: string; quantity: number }>; wishlist: Array<{ productId: string }> };
 
 function parseJson(text: string) {
-  return JSON.parse(text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, ""));
+  const cleaned = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+  return JSON.parse(start >= 0 && end >= start ? cleaned.slice(start, end + 1) : cleaned);
 }
+
+const auditTool = {
+  name: "submit_audit",
+  description: "Submit the completed French catalog audit.",
+  input_schema: {
+    type: "object", additionalProperties: false,
+    properties: {
+      summary: { type: "string" },
+      findings: {
+        type: "array", minItems: 2, maxItems: 5,
+        items: {
+          type: "object", additionalProperties: false,
+          properties: {
+            level: { type: "string", enum: ["priority", "opportunity", "quality"] },
+            title: { type: "string" },
+            detail: { type: "string" },
+            action: { type: "string", enum: ["products", "categories", "campaigns"] }
+          }, required: ["level", "title", "detail", "action"]
+        }
+      }
+    }, required: ["summary", "findings"]
+  }
+} as const;
 
 export const adminAuditService = {
   async analyze(products: Product[], categories: Category[], activity: Activity): Promise<AdminAuditReport> {
@@ -39,17 +65,19 @@ export const adminAuditService = {
       const response = await fetch(useAnthropic ? "https://api.anthropic.com/v1/messages" : "https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
         headers: useAnthropic ? { "Content-Type": "application/json", "x-api-key": env.anthropicApiKey ?? "", "anthropic-version": "2023-06-01" } : { "Content-Type": "application/json", Authorization: `Bearer ${env.groqApiKey}` },
-        body: JSON.stringify(useAnthropic ? { model: env.anthropicTextModel, max_tokens: 850, system: "Return only valid JSON.", messages: [{ role: "user", content: prompt }] } : { model: env.groqTextModel, max_tokens: 850, response_format: { type: "json_object" }, messages: [{ role: "system", content: "Return only valid JSON." }, { role: "user", content: prompt }] }),
+        body: JSON.stringify(useAnthropic ? { model: env.anthropicTextModel, max_tokens: 1_200, system: "Use the submit_audit tool to return the audit. Never return prose outside that tool.", tools: [auditTool], tool_choice: { type: "tool", name: "submit_audit" }, messages: [{ role: "user", content: prompt }] } : { model: env.groqTextModel, max_tokens: 850, response_format: { type: "json_object" }, messages: [{ role: "system", content: "Return only valid JSON." }, { role: "user", content: prompt }] }),
         signal: AbortSignal.timeout(35_000)
       });
-      const payload = await response.json() as { content?: Array<{ type?: string; text?: string }>; choices?: Array<{ message?: { content?: string } }>; error?: { message?: string } };
+      const payload = await response.json() as { content?: Array<{ type?: string; text?: string; input?: unknown }>; choices?: Array<{ message?: { content?: string } }>; error?: { message?: string } };
       if (!response.ok) {
         const isBusy = response.status === 429 || /rate limit|quota/i.test(payload.error?.message ?? "");
         throw new AppError(isBusy ? "Claude est occupé pour le moment. Réessayez dans quelques instants." : "Claude n’a pas pu terminer l’audit. Réessayez dans un instant.", isBusy ? 429 : 502, "AUDIT_REQUEST_FAILED");
       }
-      const text = useAnthropic ? payload.content?.filter((item) => item.type === "text").map((item) => item.text ?? "").join("") ?? "" : payload.choices?.[0]?.message?.content ?? "";
       try {
-        return { ...reportSchema.parse(parseJson(text)), source: useAnthropic ? "anthropic" : "groq" };
+        const result = useAnthropic
+          ? payload.content?.find((item) => item.type === "tool_use" && item.input)?.input
+          : parseJson(payload.choices?.[0]?.message?.content ?? "");
+        return { ...reportSchema.parse(result), source: useAnthropic ? "anthropic" : "groq" };
       } catch {
         throw new AppError("Claude a répondu dans un format incomplet. Relancez l’audit.", 502, "AUDIT_INVALID_RESPONSE");
       }
