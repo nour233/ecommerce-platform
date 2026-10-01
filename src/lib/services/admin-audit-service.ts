@@ -74,9 +74,12 @@ export const adminAuditService = {
         throw new AppError(isBusy ? "Claude est occupé pour le moment. Réessayez dans quelques instants." : "Claude n’a pas pu terminer l’audit. Réessayez dans un instant.", isBusy ? 429 : 502, "AUDIT_REQUEST_FAILED");
       }
       try {
-        const result = useAnthropic
-          ? payload.content?.find((item) => item.type === "tool_use" && item.input)?.input
-          : parseJson(payload.choices?.[0]?.message?.content ?? "");
+        const toolInput = payload.content?.find((item) => item.type === "tool_use" && item.input)?.input;
+        const textOutput = useAnthropic
+          ? payload.content?.filter((item) => item.type === "text").map((item) => item.text ?? "").join("") ?? ""
+          : payload.choices?.[0]?.message?.content ?? "";
+        // Claude normally returns the tool input. Some deployed model versions return the same JSON as text instead.
+        const result = toolInput ?? parseJson(textOutput);
         return { ...reportSchema.parse(result), source: useAnthropic ? "anthropic" : "groq" };
       } catch {
         throw new AppError("Claude a répondu dans un format incomplet. Relancez l’audit.", 502, "AUDIT_INVALID_RESPONSE");
