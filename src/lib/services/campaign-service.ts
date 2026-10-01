@@ -16,15 +16,26 @@ function parseJsonResponse(text: string) {
 
 function normalizeCampaignResponse(value: unknown, products: Awaited<ReturnType<typeof catalogRepository.listProducts>>) {
   if (!value || typeof value !== "object") return value;
-  const draft = { ...(value as Record<string, unknown>) };
+  const envelope = value as Record<string, unknown>;
+  const draft = envelope.campaign && typeof envelope.campaign === "object"
+    ? { ...(envelope.campaign as Record<string, unknown>) }
+    : { ...envelope };
+  if (typeof draft.theme === "string" && typeof draft.title !== "string") draft.title = draft.theme;
+  if (typeof draft.banner === "string" && typeof draft.bannerText !== "string") draft.bannerText = draft.banner;
   const candidates = Array.isArray(draft.productIds) ? draft.productIds : Array.isArray(draft.products) ? draft.products : [];
-  draft.productIds = candidates.map((candidate) => {
+  const productIds = candidates.map((candidate) => {
     const identifier = typeof candidate === "string" ? candidate : candidate && typeof candidate === "object"
       ? String((candidate as Record<string, unknown>).id ?? (candidate as Record<string, unknown>).name ?? "")
       : "";
     return products.find((product) => product.id === identifier || product.name.localeCompare(identifier, undefined, { sensitivity: "accent" }) === 0)?.id ?? identifier;
   });
-  if (typeof draft.palette === "string" && !["sunset", "ocean", "forest"].includes(draft.palette)) {
+  draft.productIds = productIds;
+  if (typeof draft.palette !== "string") {
+    const selected = productIds.map((id) => products.find((product) => product.id === id)).filter(Boolean);
+    draft.palette = selected.some((product) => /tech|workspace/i.test(product!.categoryName)) ? "ocean"
+      : selected.some((product) => /wellness|outdoor|pet/i.test(product!.categoryName)) ? "forest"
+      : "sunset";
+  } else if (!["sunset", "ocean", "forest"].includes(draft.palette)) {
     draft.palette = /ocean|blue|tech/i.test(draft.palette) ? "ocean" : /forest|green|wellness|outdoor/i.test(draft.palette) ? "forest" : "sunset";
   }
   return draft;
@@ -130,17 +141,23 @@ export async function generateCampaignContent(brief: CampaignBrief): Promise<Cam
     }
     throw new AppError("The AI provider could not generate this campaign. Check the API key and model in your hosting settings.", 502, "CAMPAIGN_AI_FAILED");
   }
+  let generatedText = "";
   try {
     const payload = await response.json();
-    const text = useAnthropic ? (payload.content ?? []).filter((item: { type?: string }) => item.type === "text").map((item: { text?: string }) => item.text ?? "").join("") : useGroq ? payload.choices?.[0]?.message?.content ?? "" : (payload.steps ?? [])
+    generatedText = useAnthropic ? (payload.content ?? []).filter((item: { type?: string }) => item.type === "text").map((item: { text?: string }) => item.text ?? "").join("") : useGroq ? payload.choices?.[0]?.message?.content ?? "" : (payload.steps ?? [])
       .filter((step: { type?: string }) => step.type === "model_output")
       .flatMap((step: { content?: Array<{ type?: string; text?: string }> }) => step.content ?? [])
       .filter((item: { type?: string }) => item.type === "text")
       .map((item: { text?: string }) => item.text ?? "").join("");
-    const content = campaignContentSchema.parse(normalizeCampaignResponse(parseJsonResponse(text), products));
+    const content = campaignContentSchema.parse(normalizeCampaignResponse(parseJsonResponse(generatedText), products));
     if (content.productIds.some(id => !products.some(p => p.id === id))) throw new Error("Unknown product");
     return { content, source: useAnthropic ? "anthropic" : useGroq ? "groq" : "gemini" };
-  } catch {
+  } catch (error) {
+    console.error("Campaign AI response could not be validated", {
+      provider: useAnthropic ? "anthropic" : useGroq ? "groq" : "gemini",
+      reason: error instanceof Error ? error.message : "Unknown validation error",
+      responsePreview: generatedText.slice(0, 500)
+    });
     throw new AppError("The AI returned an incomplete campaign. Please generate again.", 502, "CAMPAIGN_AI_INVALID");
   }
 }
