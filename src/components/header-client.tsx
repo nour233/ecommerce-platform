@@ -141,7 +141,6 @@ export function HeaderClient({ user, categories, products }: HeaderClientProps) 
               ))}</div>
             </div> : null}
           </div>
-          <Link href="/campaigns" className={`shrink-0 rounded-md px-3 py-2 text-xs font-bold transition hover:bg-slate-100 hover:text-[#d75e36] ${pathname.startsWith("/campaigns") ? "text-[#d75e36]" : "text-slate-700"}`}>Campaigns</Link>
           {categories.map((category) => (
             <Link key={category.id} href={`/categories/${category.slug}`} className="shrink-0 rounded-md px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100 hover:text-[#d75e36] lg:hidden">{category.name}</Link>
           ))}

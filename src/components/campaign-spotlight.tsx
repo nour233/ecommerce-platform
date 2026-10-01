@@ -37,7 +37,6 @@ export function CampaignSpotlight({ campaigns }: { campaigns: SpotlightCampaign[
         </div>
       </div>
       {count > 1 ? <button type="button" onClick={() => move(1)} aria-label="Next campaign" className="grid size-9 shrink-0 place-items-center rounded-full border border-slate-300 bg-white text-slate-800 transition hover:border-[#ef8354] hover:text-[#d65f3f]"><ArrowRight size={17} /></button> : null}
-      <Link href="/campaigns" className="hidden shrink-0 text-xs font-bold text-slate-700 underline underline-offset-4 xl:block">All campaigns</Link>
     </div>
   </section>;
 }
