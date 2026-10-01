@@ -10,6 +10,15 @@ type CartRecord = PersistedCartItem & { pk: string; sk: string; entityType: "Car
 type WishlistRecord = PersistedWishlistItem & { pk: string; sk: string; entityType: "WishlistItem" };
 
 export const userDataRepository = {
+  /** Aggregated by the caller; never expose a shopper identity to AI features. */
+  async listAllActivity(): Promise<{ cart: PersistedCartItem[]; wishlist: PersistedWishlistItem[] }> {
+    if (env.useMockDb) return { cart: store.cart, wishlist: store.wishlist };
+    const [cart, wishlist] = await Promise.all([
+      db.scanByEntityType<CartRecord>("CartItem"),
+      db.scanByEntityType<WishlistRecord>("WishlistItem")
+    ]);
+    return { cart, wishlist };
+  },
   async listCart(userId: string): Promise<PersistedCartItem[]> {
     if (env.useMockDb) return store.cart.filter((item) => item.userId === userId);
     return db.query<CartRecord>(keys.cartPk(userId), "CART#");

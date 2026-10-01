@@ -3,6 +3,7 @@ import { z } from "zod";
 export const campaignContentSchema = z.object({
   title: z.string().trim().min(2).max(100),
   description: z.string().trim().min(10).max(1200),
+  insight: z.string().trim().max(420).default(""),
   // Older saved campaigns did not include a scenario; preserve their edit flow.
   scenario: z.string().trim().max(650).default(""),
   bannerText: z.string().trim().min(2).max(140),
