@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Sparkles, Loader2, Check, Pencil, Send, Copy, Trash2 } from "lucide-react";
 import { CampaignBanner } from "@/components/campaign-banner";
 import { campaignContentSchema, type Campaign, type CampaignBrief, type CampaignContent } from "@/lib/campaign-schema";
-import type { Product, Category } from "@/types";
+import type { Product } from "@/types";
 
 const inputClass = "mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-100";
 const buttonClass = "inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0";
@@ -16,18 +16,15 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
   return payload.data;
 }
 
-export function CampaignStudio({ products, categories }: { products: Product[]; categories: Category[] }) {
+export function CampaignStudio({ products }: { products: Product[] }) {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [active, setActive] = useState<Campaign | null>(null);
   const [edit, setEdit] = useState<CampaignContent | null>(null);
-  const [brief, setBrief] = useState<CampaignBrief>({ theme: "Analyze the catalog and create the strongest campaign to turn visitors into customers", audience: "The store's most likely customers", tone: "premium", language: "French", categoryIds: [], productIds: [] });
+  const brief: CampaignBrief = { theme: "Analyze the catalog and create the strongest campaign to turn visitors into customers", audience: "The store's most likely customers", tone: "premium", language: "French", categoryIds: [], productIds: [] };
+  const [idea, setIdea] = useState("");
   const [busy, setBusy] = useState<string | null>("loading");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  function toggleCategory(categoryId: string) {
-    const categoryIds = brief.categoryIds.includes(categoryId) ? brief.categoryIds.filter((id) => id !== categoryId) : [...brief.categoryIds, categoryId];
-    setBrief({ ...brief, categoryIds, productIds: [] });
-  }
   async function load() {
     setBusy("loading"); setError("");
     try { setCampaigns(await request<Campaign[]>("/api/admin/campaigns")); setActive(null); setEdit(null); }
@@ -41,7 +38,7 @@ export function CampaignStudio({ products, categories }: { products: Product[]; 
   }
   async function generate(event: React.FormEvent) {
     event.preventDefault(); setBusy("generating"); setError(""); setNotice("");
-    try { const created = await request<Campaign>("/api/admin/campaigns", { method: "POST", body: JSON.stringify(brief) }); update(created); setNotice(created.generationSource === "catalog-fallback" ? "The AI provider is busy, so we created a smart catalog draft. Review and edit it before approval." : "Your AI campaign scenario is ready. Review it, approve it and publish it."); }
+    try { const created = await request<Campaign>("/api/admin/campaigns", { method: "POST", body: JSON.stringify({ ...brief, theme: idea.trim() || brief.theme }) }); update(created); setNotice(created.generationSource === "catalog-fallback" ? "The AI provider is busy, so we created a smart catalog draft. Review and edit it before approval." : "Your AI campaign scenario is ready. Review it, approve it and publish it."); }
     catch (err) { setError(err instanceof Error ? err.message : "Generation failed"); }
     finally { setBusy(null); }
   }
@@ -72,7 +69,7 @@ export function CampaignStudio({ products, categories }: { products: Product[]; 
       <aside className="space-y-5 xl:sticky xl:top-6"><form onSubmit={generate} className="space-y-5 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">Autopilot mode</p><h2 className="mt-1 font-bold text-slate-950">AI creates the opportunity</h2></div><span className="grid size-8 place-items-center rounded-full bg-emerald-50 text-sm font-bold text-emerald-700">AI</span></div>
         <div className="rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600"><p className="font-semibold text-slate-900">What AI will decide for you</p><ul className="mt-2 space-y-1.5"><li>• the most attractive customer need in your catalog</li><li>• a coherent pack of in-stock products</li><li>• the hook, story, storefront copy and call to action</li></ul></div>
-        <details className="rounded-2xl border border-slate-200 p-3"><summary className="cursor-pointer text-sm font-semibold text-slate-700">Customize AI direction <span className="font-normal text-slate-400">(optional)</span></summary><div className="mt-4 space-y-4"><label className="block text-sm font-medium">Business goal<input className={inputClass} required minLength={3} maxLength={300} value={brief.theme} onChange={e => setBrief({ ...brief, theme: e.target.value })} /></label><label className="block text-sm font-medium">Audience<input className={inputClass} required minLength={2} maxLength={200} value={brief.audience} onChange={e => setBrief({ ...brief, audience: e.target.value })} /></label><label className="block text-sm font-medium">Tone<select className={inputClass} value={brief.tone} onChange={e => setBrief({ ...brief, tone: e.target.value as CampaignBrief["tone"] })}><option value="inspiring">Inspiring</option><option value="playful">Playful</option><option value="premium">Premium</option></select></label><label className="block text-sm font-medium">Language<select className={inputClass} value={brief.language} onChange={e => setBrief({ ...brief, language: e.target.value as CampaignBrief["language"] })}><option>French</option><option>English</option></select></label><fieldset><legend className="text-sm font-semibold">Catalog scope</legend><div className="mt-3 grid grid-cols-2 gap-2">{categories.map((category) => <label key={category.id} className={`flex cursor-pointer items-center gap-2 rounded-xl border px-2.5 py-2.5 text-xs transition ${brief.categoryIds.includes(category.id) ? "border-emerald-500 bg-emerald-50 text-emerald-950" : "border-slate-200 bg-white hover:border-emerald-300"}`}><input type="checkbox" checked={brief.categoryIds.includes(category.id)} onChange={() => toggleCategory(category.id)} /><span className="min-w-0 flex-1 truncate font-semibold">{category.name}</span></label>)}</div></fieldset></div></details>
+        <label className="block text-sm font-semibold">Describe your idea <span className="font-normal text-slate-400">(optional)</span><textarea className={inputClass} rows={3} maxLength={300} value={idea} onChange={event => setIdea(event.target.value)} placeholder="Example: a summer routine for working and relaxing at home." /><span className="mt-2 block text-xs font-normal leading-5 text-slate-500">Leave this empty and AI will find the best opportunity itself. Your words only guide its direction.</span></label>
         <button className={`${buttonClass} w-full bg-emerald-700`} disabled={!!busy || !!edit}>{busy === "generating" ? <Loader2 className="animate-spin" size={17} /> : <Sparkles size={17} />}{busy === "generating" ? "AI is building your campaign…" : "Create an AI campaign"}</button>
         <p className="text-xs leading-5 text-slate-500">One click creates a draft. You only review, approve and publish.</p>
       </form><div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm"><div className="mb-3 flex items-center justify-between"><h2 className="font-bold">Saved campaigns</h2><span className="text-xs text-slate-400">{campaigns.length}</span></div>{!campaigns.length && <p className="text-sm text-slate-500">{busy === "loading" ? "Loading…" : "Your first campaign starts with an idea."}</p>}<div className="max-h-52 space-y-2 overflow-auto">{campaigns.map(c => <button key={c.id} disabled={!!busy || !!edit} onClick={() => { setActive(c); setError(""); setNotice(""); }} className={`block w-full rounded-xl border p-3 text-left transition disabled:opacity-50 ${active?.id === c.id ? "border-emerald-500 bg-emerald-50 shadow-sm" : "border-slate-100 hover:border-slate-300"}`}><span className="block truncate text-sm font-semibold">{c.title}</span><span className="text-xs capitalize text-slate-500">{c.status} · {c.productIds.length} products</span></button>)}</div></div></aside>
