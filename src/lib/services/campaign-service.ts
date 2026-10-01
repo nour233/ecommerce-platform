@@ -22,23 +22,34 @@ function normalizeCampaignResponse(value: unknown, products: Awaited<ReturnType<
     ? { ...(envelope.campaign as Record<string, unknown>) }
     : { ...envelope };
   if (typeof draft.theme === "string" && typeof draft.title !== "string") draft.title = draft.theme;
+  if (typeof draft.name === "string" && typeof draft.title !== "string") draft.title = draft.name;
   if (typeof draft.banner === "string" && typeof draft.bannerText !== "string") draft.bannerText = draft.banner;
+  if (typeof draft.cta === "string" && typeof draft.bannerText !== "string") draft.bannerText = draft.cta;
+  if (typeof draft.copy === "string" && typeof draft.description !== "string") draft.description = draft.copy;
+  if (typeof draft.customerInsight === "string" && typeof draft.insight !== "string") draft.insight = draft.customerInsight;
+  if (typeof draft.opportunity === "string" && typeof draft.insight !== "string") draft.insight = draft.opportunity;
+  if (typeof draft.recommendation === "string" && typeof draft.insight !== "string") draft.insight = draft.recommendation;
   if (typeof draft.insight !== "string") draft.insight = typeof draft.scenario === "string" ? draft.scenario : "AI selected this opportunity from the current catalog.";
   if (typeof draft.scenario !== "string") draft.scenario = typeof draft.description === "string" ? draft.description : "A focused customer journey from discovery to action.";
   const candidates = Array.isArray(draft.productIds) ? draft.productIds
     : Array.isArray(draft.selectedProductIds) ? draft.selectedProductIds
     : Array.isArray(draft.selectedProducts) ? draft.selectedProducts
+    : Array.isArray(draft.selected_products) ? draft.selected_products
+    : Array.isArray(draft.recommendedProducts) ? draft.recommendedProducts
+    : Array.isArray(draft.recommended_products) ? draft.recommended_products
     : Array.isArray(draft.products) ? draft.products
     : [];
   const productIds = candidates.map((candidate) => {
     const identifier = typeof candidate === "string" ? candidate : candidate && typeof candidate === "object"
-      ? String((candidate as Record<string, unknown>).id ?? (candidate as Record<string, unknown>).name ?? "")
+      ? String((candidate as Record<string, unknown>).id ?? (candidate as Record<string, unknown>).productId ?? (candidate as Record<string, unknown>).product_id ?? (candidate as Record<string, unknown>).name ?? (candidate as Record<string, unknown>).title ?? "")
       : "";
     return products.find((product) => product.id === identifier || product.name.localeCompare(identifier, undefined, { sensitivity: "accent" }) === 0)?.id ?? identifier;
   });
-  draft.productIds = productIds;
+  // Preserve an explicitly supplied, unknown ID so validation rejects invented products.
+  const selectedProductIds: string[] = [...new Set(productIds)].slice(0, 6);
+  draft.productIds = selectedProductIds;
   if (typeof draft.palette !== "string") {
-    const selected = productIds.map((id) => products.find((product) => product.id === id)).filter(Boolean);
+    const selected = selectedProductIds.map((id) => products.find((product) => product.id === id)).filter(Boolean);
     draft.palette = selected.some((product) => /tech|workspace/i.test(product!.categoryName)) ? "ocean"
       : selected.some((product) => /wellness|outdoor|pet/i.test(product!.categoryName)) ? "forest"
       : "sunset";
