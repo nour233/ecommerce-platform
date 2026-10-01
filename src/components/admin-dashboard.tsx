@@ -237,7 +237,7 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
 
           {section === "overview" ? <Overview products={products} categories={categories} users={users} userCommerce={userCommerce} inventoryValue={inventoryValue} totalStock={totalStock} cartItemCount={cartItemCount} wishlistItemCount={wishlistItemCount} insights={insights} onNavigate={selectSection} /> : null}
 
-          {section === "campaigns" ? <CampaignStudio products={products} /> : null}
+          {section === "campaigns" ? <CampaignStudio products={products} categories={categories} /> : null}
 
           {section === "products" ? (
             <DataPanel title="Product inventory" detail={`${visibleProducts.length} of ${products.length} products`}>
