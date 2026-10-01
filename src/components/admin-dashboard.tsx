@@ -10,7 +10,6 @@ import {
   Boxes,
   BrainCircuit,
   CheckCircle2,
-  CircleDollarSign,
   ExternalLink,
   Heart,
   Layers3,
@@ -179,11 +178,11 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
   async function logout() { await fetch("/api/auth/logout", { method: "POST" }); router.push("/login"); router.refresh(); }
 
   const nav = [
-    { id: "campaigns" as const, label: "AI Campaigns", icon: Sparkles },
-    { id: "overview" as const, label: "Overview", icon: LayoutDashboard },
-    { id: "products" as const, label: "Products", icon: Boxes, count: products.length },
-    { id: "categories" as const, label: "Categories", icon: Tags, count: categories.length },
-    { id: "users" as const, label: "Customers", icon: Users, count: users.filter((user) => user.role === "customer").length }
+    { id: "campaigns" as const, label: "Campagnes IA", icon: Sparkles },
+    { id: "overview" as const, label: "Vue d’ensemble", icon: LayoutDashboard },
+    { id: "products" as const, label: "Produits", icon: Boxes, count: products.length },
+    { id: "categories" as const, label: "Catégories", icon: Tags, count: categories.length },
+    { id: "users" as const, label: "Clients", icon: Users, count: users.filter((user) => user.role === "customer").length }
   ];
 
   return (
@@ -226,8 +225,8 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
         <main className="mx-auto max-w-[1500px] p-5 sm:p-8 lg:p-10">
           <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="mb-2 text-xs font-bold uppercase tracking-[0.15em] text-emerald-700">{section === "overview" ? `Welcome back, ${currentUser.name.split(" ")[0]}` : "Catalog management"}</p>
-              <h1 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">{section === "overview" ? "Your store at a glance" : nav.find((item) => item.id === section)?.label}</h1>
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.15em] text-emerald-700">{section === "overview" ? `Bon retour, ${currentUser.name.split(" ")[0]}` : "Gestion du catalogue"}</p>
+              <h1 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">{section === "overview" ? "Centre de pilotage" : nav.find((item) => item.id === section)?.label}</h1>
             </div>
             {section === "products" ? <PrimaryButton onClick={() => openProduct()} icon={PackagePlus}>Add product</PrimaryButton> : null}
             {section === "categories" ? <PrimaryButton onClick={() => openCategory()} icon={Plus}>Add category</PrimaryButton> : null}
@@ -235,7 +234,7 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
 
           {message ? <div role="alert" className="mb-5 flex items-center justify-between rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800"><span>{message}</span><button onClick={() => setMessage(null)} aria-label="Dismiss"><X size={17} /></button></div> : null}
 
-          {section === "overview" ? <Overview products={products} categories={categories} users={users} userCommerce={userCommerce} inventoryValue={inventoryValue} totalStock={totalStock} cartItemCount={cartItemCount} wishlistItemCount={wishlistItemCount} insights={insights} onNavigate={selectSection} /> : null}
+          {section === "overview" ? <Overview products={products} categories={categories} userCommerce={userCommerce} inventoryValue={inventoryValue} totalStock={totalStock} cartItemCount={cartItemCount} wishlistItemCount={wishlistItemCount} insights={insights} onNavigate={selectSection} /> : null}
 
           {section === "campaigns" ? <CampaignStudio products={products} categories={categories} /> : null}
 
@@ -311,7 +310,7 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
   );
 }
 
-function Overview({ products, categories, users, userCommerce, inventoryValue, totalStock, cartItemCount, wishlistItemCount, insights, onNavigate }: { products: Product[]; categories: Category[]; users: User[]; userCommerce: UserCommerce[]; inventoryValue: number; totalStock: number; cartItemCount: number; wishlistItemCount: number; insights: StoreInsight[]; onNavigate: (section: Section) => void }) {
+function Overview({ products, categories, userCommerce, inventoryValue, totalStock, cartItemCount, wishlistItemCount, insights, onNavigate }: { products: Product[]; categories: Category[]; userCommerce: UserCommerce[]; inventoryValue: number; totalStock: number; cartItemCount: number; wishlistItemCount: number; insights: StoreInsight[]; onNavigate: (section: Section) => void }) {
   const lowStock = products.filter((item) => item.stock < 10);
   const availableProducts = products.filter((item) => item.stock > 0).length;
   const healthScore = products.length ? Math.round((availableProducts / products.length) * 65 + (lowStock.length === 0 ? 35 : Math.max(5, 35 - lowStock.length * 8))) : 0;
@@ -323,20 +322,21 @@ function Overview({ products, categories, users, userCommerce, inventoryValue, t
     return { product, carts, saves, score: carts * 2 + saves };
   }).sort((a, b) => b.score - a.score);
   const demandLeader = engagement[0];
+  const intentScore = Math.min(100, cartItemCount * 12 + wishlistItemCount * 6);
+  const campaignReadiness = Math.round((availableProducts / Math.max(products.length, 1)) * 100);
   const stats = [
-    { label: "Total users", value: users.length.toString(), note: `${users.filter(user => user.role === "customer").length} customer accounts`, icon: Users, tone: "bg-violet-50 text-violet-700" },
-    { label: "Total products", value: products.length.toString(), note: `${availableProducts} currently available`, icon: Boxes, tone: "bg-emerald-50 text-emerald-700" },
-    { label: "Total categories", value: categories.length.toString(), note: "Active store collections", icon: Tags, tone: "bg-orange-50 text-orange-700" },
-    { label: "Items in carts", value: cartItemCount.toString(), note: "Active purchase intent", icon: ShoppingCart, tone: "bg-sky-50 text-sky-700" },
-    { label: "Items in wishlists", value: wishlistItemCount.toString(), note: "Products customers saved", icon: Heart, tone: "bg-rose-50 text-rose-700" }
+    { label: "Santé du catalogue", value: `${healthScore}%`, note: `${lowStock.length} produit${lowStock.length > 1 ? "s" : ""} à surveiller`, icon: Activity, tone: "bg-emerald-50 text-emerald-700" },
+    { label: "Intention client", value: `${intentScore}%`, note: `${cartItemCount} dans les paniers · ${wishlistItemCount} favoris`, icon: Heart, tone: "bg-rose-50 text-rose-700" },
+    { label: "Prêt pour campagne", value: `${campaignReadiness}%`, note: `${availableProducts} produits disponibles`, icon: Sparkles, tone: "bg-violet-50 text-violet-700" },
+    { label: "Valeur du stock", value: `$${integerFormatter.format(inventoryValue)}`, note: `${totalStock} unités à valoriser`, icon: Boxes, tone: "bg-sky-50 text-sky-700" }
   ];
   const maxStock = Math.max(...products.map((product) => product.stock), 1);
   return <div className="space-y-7">
     <section className="relative overflow-hidden rounded-3xl bg-[#172033] p-6 text-white shadow-xl shadow-slate-900/15 sm:p-8">
       <div className="absolute -right-20 -top-24 size-80 rounded-full bg-emerald-400/10 blur-3xl" /><div className="absolute -bottom-24 left-1/3 size-72 rounded-full bg-orange-400/10 blur-3xl" />
-      <div className="relative grid gap-7 xl:grid-cols-[1.1fr_.9fr]"><div><div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-400/10 px-3 py-1.5 text-xs font-bold text-emerald-200"><span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_0_4px_rgba(74,222,128,.12)]" />STORE PULSE</div><h2 className="mt-5 text-2xl font-bold tracking-tight sm:text-3xl">Your business, clearly in view.</h2><p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">The essentials first: customers, catalog and the shopping activity happening in your store right now.</p></div><div className="grid grid-cols-3 gap-3"><div className="rounded-2xl border border-white/10 bg-white/[.07] px-4 py-4"><p className="text-[10px] font-bold uppercase tracking-[.14em] text-slate-400">Catalog value</p><p className="mt-2 text-xl font-bold">${integerFormatter.format(inventoryValue)}</p><p className="mt-1 text-xs text-slate-400">{totalStock} units</p></div><div className="rounded-2xl border border-white/10 bg-white/[.07] px-4 py-4"><p className="text-[10px] font-bold uppercase tracking-[.14em] text-slate-400">Stock health</p><p className="mt-2 text-xl font-bold text-emerald-200">{healthScore}%</p><p className="mt-1 text-xs text-slate-400">{lowStock.length} need review</p></div><div className="rounded-2xl border border-white/10 bg-white/[.07] px-4 py-4"><p className="text-[10px] font-bold uppercase tracking-[.14em] text-slate-400">Top signal</p><p className="mt-2 truncate text-sm font-bold">{demandLeader?.product.name ?? "No activity yet"}</p><p className="mt-1 text-xs text-slate-400">{demandLeader?.score ?? 0} intent points</p></div></div></div>
+      <div className="relative grid gap-7 xl:grid-cols-[1.1fr_.9fr]"><div><div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-400/10 px-3 py-1.5 text-xs font-bold text-emerald-200"><span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_0_4px_rgba(74,222,128,.12)]" />RADAR COMMERCIAL EN DIRECT</div><h2 className="mt-5 text-2xl font-bold tracking-tight sm:text-3xl">Voici où votre boutique peut gagner aujourd’hui.</h2><p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">Le tableau combine stock, intérêt client et catalogue pour transformer les chiffres en prochaines actions.</p><button onClick={() => onNavigate("campaigns")} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#ef8354] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-orange-950/30 transition hover:-translate-y-0.5 hover:bg-[#dd6e41]"><Sparkles size={17} />Créer une opportunité avec l’IA</button></div><div className="grid grid-cols-3 gap-3"><div className="rounded-2xl border border-white/10 bg-white/[.07] px-4 py-4"><p className="text-[10px] font-bold uppercase tracking-[.14em] text-slate-400">Intention client</p><p className="mt-2 text-xl font-bold text-rose-200">{intentScore}%</p><p className="mt-1 text-xs text-slate-400">Paniers + favoris</p></div><div className="rounded-2xl border border-white/10 bg-white/[.07] px-4 py-4"><p className="text-[10px] font-bold uppercase tracking-[.14em] text-slate-400">Catalogue prêt</p><p className="mt-2 text-xl font-bold text-emerald-200">{campaignReadiness}%</p><p className="mt-1 text-xs text-slate-400">Produits disponibles</p></div><div className="rounded-2xl border border-white/10 bg-white/[.07] px-4 py-4"><p className="text-[10px] font-bold uppercase tracking-[.14em] text-slate-400">Signal fort</p><p className="mt-2 truncate text-sm font-bold">{demandLeader?.product.name ?? "À venir"}</p><p className="mt-1 text-xs text-slate-400">{demandLeader?.score ?? 0} signaux client</p></div></div></div>
     </section>
-    <section><div className="mb-4 flex items-end justify-between gap-4"><div><p className="text-[10px] font-bold uppercase tracking-[.16em] text-emerald-700">Core metrics</p><h2 className="mt-1 text-xl font-bold tracking-tight text-slate-900">Store overview</h2></div><p className="hidden text-xs font-medium text-slate-500 sm:block">Updated from your live catalog and customer activity</p></div><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">{stats.map(({ label, value, note, icon: Icon, tone }) => <article key={label} className="group relative overflow-hidden rounded-2xl border border-white bg-white p-5 shadow-[0_12px_34px_rgba(15,23,42,0.06)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_42px_rgba(15,23,42,0.10)]"><div className={`absolute inset-x-0 top-0 h-1 ${tone.split(" ")[0]}`} /><div className="flex items-start justify-between"><span className={`grid size-11 place-items-center rounded-2xl ${tone}`}><Icon size={20} /></span><ArrowUpRight size={17} className="text-slate-300 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-slate-600" /></div><p className="mt-6 text-sm font-semibold text-slate-500">{label}</p><p className="mt-1.5 text-3xl font-bold tracking-tight">{value}</p><p className="mt-2 text-xs font-medium text-slate-400">{note}</p></article>)}</div></section>
+    <section><div className="mb-4 flex items-end justify-between gap-4"><div><p className="text-[10px] font-bold uppercase tracking-[.16em] text-emerald-700">Indicateurs intelligents</p><h2 className="mt-1 text-xl font-bold tracking-tight text-slate-900">Les signaux qui comptent</h2></div><p className="hidden text-xs font-medium text-slate-500 sm:block">Actualisé depuis votre catalogue et l’activité client</p></div><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{stats.map(({ label, value, note, icon: Icon, tone }) => <article key={label} className="group relative overflow-hidden rounded-2xl border border-white bg-white p-5 shadow-[0_12px_34px_rgba(15,23,42,0.06)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_42px_rgba(15,23,42,0.10)]"><div className={`absolute inset-x-0 top-0 h-1 ${tone.split(" ")[0]}`} /><div className="flex items-start justify-between"><span className={`grid size-11 place-items-center rounded-2xl ${tone}`}><Icon size={20} /></span><ArrowUpRight size={17} className="text-slate-300 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-slate-600" /></div><p className="mt-6 text-sm font-semibold text-slate-500">{label}</p><p className="mt-1.5 text-3xl font-bold tracking-tight">{value}</p><p className="mt-2 text-xs font-medium text-slate-400">{note}</p></article>)}</div></section>
     <div className="grid gap-6 xl:grid-cols-[1.15fr_.85fr]">
       <DataPanel title="Action queue" detail="The next highest-impact actions for your storefront">
         <div className="divide-y divide-slate-100">{[
@@ -424,6 +424,6 @@ function UserPresence({ lastActiveAt }: { lastActiveAt?: string }) {
   return <span className="inline-flex items-center gap-2 text-sm font-medium text-slate-500"><span className="size-2 rounded-full bg-slate-300" />Offline</span>;
 }
 function RowActions({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) { return <div className="flex justify-end gap-1"><button type="button" title="Edit" aria-label="Edit" onClick={onEdit} className="grid size-9 place-items-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"><Pencil size={17} /></button><button type="button" title="Delete" aria-label="Delete" onClick={onDelete} className="grid size-9 place-items-center rounded-md text-slate-400 transition hover:bg-red-50 hover:text-red-600"><Trash2 size={17} /></button></div>; }
-function Editor({ title, subtitle, onClose, children }: { title: string; subtitle: string; onClose: () => void; children: React.ReactNode }) { return <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-slate-950/60 p-4 backdrop-blur-md" role="dialog" aria-modal="true" aria-label={title}><div className="my-8 w-full max-w-2xl overflow-hidden rounded-2xl bg-[#f8fafc] shadow-2xl shadow-slate-950/30"><div className="flex items-start justify-between border-b border-slate-200 bg-white px-7 py-6"><div><p className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">Catalog editor</p><h2 className="text-2xl font-bold tracking-tight">{title}</h2><p className="mt-1.5 text-sm text-slate-500">{subtitle}</p></div><button type="button" onClick={onClose} className="grid size-10 place-items-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" aria-label="Close"><X size={19} /></button></div><div className="p-7">{children}</div></div></div>; }
+function Editor({ title, subtitle, onClose, children }: { title: string; subtitle: string; onClose: () => void; children: React.ReactNode }) { return <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/60 p-3 backdrop-blur-md sm:p-5" role="dialog" aria-modal="true" aria-label={title}><div className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-[#f8fafc] shadow-2xl shadow-slate-950/30 sm:max-h-[calc(100dvh-2.5rem)]"><div className="flex shrink-0 items-start justify-between border-b border-slate-200 bg-white px-5 py-4"><div><p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">Catalog editor</p><h2 className="text-xl font-bold tracking-tight">{title}</h2><p className="mt-1 text-xs text-slate-500">{subtitle}</p></div><button type="button" onClick={onClose} className="grid size-9 place-items-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" aria-label="Close"><X size={18} /></button></div><div className="overflow-y-auto p-5">{children}</div></div></div>; }
 function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="block"><span className="mb-2 block text-sm font-bold text-slate-700">{label}</span>{children}</label>; }
 function FormActions({ busy, onCancel }: { busy: boolean; onCancel: () => void }) { return <div className="flex justify-end gap-3 border-t border-slate-200 pt-6 sm:col-span-2"><button type="button" onClick={onCancel} className="min-h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50">Cancel</button><button disabled={busy} className="min-h-11 rounded-xl bg-emerald-700 px-5 text-sm font-bold text-white shadow-lg shadow-emerald-900/15 transition hover:-translate-y-0.5 hover:bg-emerald-800 disabled:opacity-50">{busy ? "Saving..." : "Save changes"}</button></div>; }
