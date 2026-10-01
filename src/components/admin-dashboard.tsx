@@ -8,7 +8,6 @@ import {
   Activity,
   AlertTriangle,
   Boxes,
-  BrainCircuit,
   CheckCircle2,
   ExternalLink,
   Heart,
@@ -32,9 +31,8 @@ import {
   X
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import type { Category, Product, StoreInsight, User, UserCommerceData, UserRole } from "@/types";
+import type { Category, Product, User, UserCommerceData, UserRole } from "@/types";
 import { CloudinaryImageField } from "@/components/cloudinary-image-field";
-import { buildStoreInsights } from "@/lib/services/store-insights";
 import { CampaignStudio } from "@/components/campaign-studio";
 
 type Section = "overview" | "products" | "categories" | "users" | "campaigns";
@@ -92,7 +90,6 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
   const totalStock = useMemo(() => products.reduce((sum, product) => sum + product.stock, 0), [products]);
   const cartItemCount = useMemo(() => userCommerce.reduce((total, commerce) => total + commerce.cart.reduce((count, item) => count + item.quantity, 0), 0), [userCommerce]);
   const wishlistItemCount = useMemo(() => userCommerce.reduce((total, commerce) => total + commerce.wishlist.length, 0), [userCommerce]);
-  const insights = useMemo(() => buildStoreInsights(products, categories, userCommerce), [products, categories, userCommerce]);
   const normalizedQuery = query.trim().toLowerCase();
   const visibleProducts = products.filter((product) => !normalizedQuery || `${product.name} ${product.categoryName} ${product.slug}`.toLowerCase().includes(normalizedQuery));
   const visibleCategories = categories.filter((category) => !normalizedQuery || `${category.name} ${category.description}`.toLowerCase().includes(normalizedQuery));
@@ -234,7 +231,7 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
 
           {message ? <div role="alert" className="mb-5 flex items-center justify-between rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800"><span>{message}</span><button onClick={() => setMessage(null)} aria-label="Dismiss"><X size={17} /></button></div> : null}
 
-          {section === "overview" ? <Overview products={products} categories={categories} userCommerce={userCommerce} inventoryValue={inventoryValue} totalStock={totalStock} cartItemCount={cartItemCount} wishlistItemCount={wishlistItemCount} insights={insights} onNavigate={selectSection} /> : null}
+          {section === "overview" ? <Overview products={products} categories={categories} userCommerce={userCommerce} inventoryValue={inventoryValue} totalStock={totalStock} cartItemCount={cartItemCount} wishlistItemCount={wishlistItemCount} onNavigate={selectSection} /> : null}
 
           {section === "campaigns" ? <CampaignStudio products={products} categories={categories} /> : null}
 
@@ -310,7 +307,7 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
   );
 }
 
-function Overview({ products, categories, userCommerce, inventoryValue, totalStock, cartItemCount, wishlistItemCount, insights, onNavigate }: { products: Product[]; categories: Category[]; userCommerce: UserCommerce[]; inventoryValue: number; totalStock: number; cartItemCount: number; wishlistItemCount: number; insights: StoreInsight[]; onNavigate: (section: Section) => void }) {
+function Overview({ products, categories, userCommerce, inventoryValue, totalStock, cartItemCount, wishlistItemCount, onNavigate }: { products: Product[]; categories: Category[]; userCommerce: UserCommerce[]; inventoryValue: number; totalStock: number; cartItemCount: number; wishlistItemCount: number; onNavigate: (section: Section) => void }) {
   const lowStock = products.filter((item) => item.stock < 10);
   const availableProducts = products.filter((item) => item.stock > 0).length;
   const healthScore = products.length ? Math.round((availableProducts / products.length) * 65 + (lowStock.length === 0 ? 35 : Math.max(5, 35 - lowStock.length * 8))) : 0;
@@ -353,22 +350,7 @@ function Overview({ products, categories, userCommerce, inventoryValue, totalSto
       </DataPanel>
       <div className="rounded-2xl bg-gradient-to-br from-[#172033] to-[#243655] p-6 text-white shadow-xl shadow-slate-900/15"><span className="grid size-11 place-items-center rounded-2xl bg-[#ef8354] shadow-lg shadow-orange-950/30"><Sparkles size={20} /></span><h2 className="mt-6 text-xl font-bold tracking-tight">One workspace, clear decisions.</h2><p className="mt-2 text-sm leading-6 text-slate-300">Move from a signal to the exact operational screen where you can act on it.</p><div className="mt-6 space-y-2.5"><button onClick={() => onNavigate("products")} className="flex min-h-11 w-full items-center justify-between rounded-xl bg-white px-4 text-sm font-bold text-slate-950 shadow-sm transition hover:-translate-y-0.5">Manage inventory <ArrowUpRight size={17} /></button><button onClick={() => onNavigate("users")} className="flex min-h-11 w-full items-center justify-between rounded-xl border border-white/15 px-4 text-sm font-semibold text-white transition hover:bg-white/10">Review customers <ArrowUpRight size={17} /></button></div></div>
     </div>
-    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_34px_rgba(15,23,42,0.06)]">
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 px-6 py-5"><div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-xl bg-violet-50 text-violet-700"><BrainCircuit size={19} /></span><div><h2 className="font-bold tracking-tight text-slate-900">AI Store Insights</h2><p className="mt-1 text-xs font-medium text-slate-500">Recommendations generated from inventory, carts, and wishlist activity.</p></div></div><span className="inline-flex items-center gap-1.5 rounded-full bg-violet-50 px-3 py-1.5 text-xs font-bold text-violet-700"><Sparkles size={13} />Live analysis</span></div>
-      <div className="grid divide-y divide-slate-100 md:grid-cols-3 md:divide-x md:divide-y-0">{insights.map((insight) => <InsightCard key={insight.id} insight={insight} />)}</div>
-    </section>
   </div>;
-}
-
-function InsightCard({ insight }: { insight: StoreInsight }) {
-  const styles = {
-    orange: "bg-orange-50 text-orange-700",
-    rose: "bg-rose-50 text-rose-700",
-    sky: "bg-sky-50 text-sky-700",
-    emerald: "bg-emerald-50 text-emerald-700"
-  };
-  const Icon = insight.id === "inventory" ? Boxes : insight.id === "demand" ? TrendingUp : Lightbulb;
-  return <article className="p-5"><span className={`grid size-9 place-items-center rounded-xl ${styles[insight.tone]}`}><Icon size={17} /></span><h3 className="mt-4 text-sm font-bold leading-5 text-slate-900">{insight.title}</h3><p className="mt-2 text-sm leading-6 text-slate-500">{insight.description}</p></article>;
 }
 
 function CategoryProducts({ category, products, onDelete, onClose }: { category: Category | null; products: Product[]; onDelete: (product: Product) => Promise<void>; onClose: () => void }) {
