@@ -42,7 +42,7 @@ export function CampaignStudio({ products, categories }: { products: Product[]; 
   }
   async function generate(event: React.FormEvent) {
     event.preventDefault(); setBusy("generating"); setError(""); setNotice("");
-    try { const created = await request<Campaign>("/api/admin/campaigns", { method: "POST", body: JSON.stringify({ ...brief, theme: idea.trim() || brief.theme }) }); update(created); setNotice(created.generationSource === "catalog-fallback" ? "The AI provider is busy, so we created a smart catalog draft. Review and edit it before approval." : "Your AI campaign scenario is ready. Review it, approve it and publish it."); }
+    try { const created = await request<Campaign>("/api/admin/campaigns", { method: "POST", body: JSON.stringify({ ...brief, theme: idea.trim() || brief.theme }) }); update(created); setNotice(created.generationSource === "catalog-fallback" ? "The AI response could not be completed, so we prepared a catalog draft for your review." : "Your AI campaign scenario is ready. Review it, approve it and publish it."); }
     catch (err) { setError(err instanceof Error ? err.message : "Generation failed"); }
     finally { setBusy(null); }
   }
