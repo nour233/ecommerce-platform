@@ -9,10 +9,8 @@ import {
   AlertTriangle,
   Boxes,
   BrainCircuit,
-  CheckCircle2,
   ExternalLink,
   Heart,
-  Layers3,
   Lightbulb,
   LayoutDashboard,
   LogOut,
@@ -24,7 +22,6 @@ import {
   ShoppingCart,
   Sparkles,
   Tags,
-  Target,
   Trash2,
   TrendingUp,
   Users,
@@ -320,8 +317,6 @@ function Overview({ products, categories, userCommerce, inventoryValue, totalSto
   const lowStock = products.filter((item) => item.stock < 10);
   const availableProducts = products.filter((item) => item.stock > 0).length;
   const healthScore = products.length ? Math.round((availableProducts / products.length) * 65 + (lowStock.length === 0 ? 35 : Math.max(5, 35 - lowStock.length * 8))) : 0;
-  const categoryDistribution = categories.map((category) => ({ category, count: products.filter((product) => product.categoryId === category.id).length }));
-  const largestCollection = categoryDistribution.reduce((largest, item) => item.count > largest.count ? item : largest, categoryDistribution[0] ?? { category: null, count: 0 });
   const engagement = products.map((product) => {
     const carts = userCommerce.reduce((total, commerce) => total + commerce.cart.filter((item) => item.productId === product.id).reduce((quantity, item) => quantity + item.quantity, 0), 0);
     const saves = userCommerce.reduce((total, commerce) => total + commerce.wishlist.filter((item) => item.productId === product.id).length, 0);
@@ -343,16 +338,6 @@ function Overview({ products, categories, userCommerce, inventoryValue, totalSto
     </section>
     <section><div className="mb-4 flex items-end justify-between gap-4"><div><p className="text-[10px] font-bold uppercase tracking-[.16em] text-emerald-700">Indicateurs intelligents</p><h2 className="mt-1 text-xl font-bold tracking-tight text-slate-900">Les signaux qui comptent</h2></div><p className="hidden text-xs font-medium text-slate-500 sm:block">Actualisé depuis votre catalogue et l’activité client</p></div><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{stats.map(({ label, value, note, icon: Icon, tone }) => <article key={label} className="group relative overflow-hidden rounded-2xl border border-white bg-white p-5 shadow-[0_12px_34px_rgba(15,23,42,0.06)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_42px_rgba(15,23,42,0.10)]"><div className={`absolute inset-x-0 top-0 h-1 ${tone.split(" ")[0]}`} /><div className="flex items-start justify-between"><span className={`grid size-11 place-items-center rounded-2xl ${tone}`}><Icon size={20} /></span><ArrowUpRight size={17} className="text-slate-300 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-slate-600" /></div><p className="mt-6 text-sm font-semibold text-slate-500">{label}</p><p className="mt-1.5 text-3xl font-bold tracking-tight">{value}</p><p className="mt-2 text-xs font-medium text-slate-400">{note}</p></article>)}</div></section>
     <StoreAuditor report={audit} busy={auditBusy} onAudit={onAudit} onNavigate={onNavigate} />
-    <div className="grid gap-6 xl:grid-cols-[1.15fr_.85fr]">
-      <DataPanel title="Action queue" detail="The next highest-impact actions for your storefront">
-        <div className="divide-y divide-slate-100">{[
-          { icon: lowStock.length ? AlertTriangle : CheckCircle2, tone: lowStock.length ? "bg-orange-50 text-orange-700" : "bg-emerald-50 text-emerald-700", title: lowStock.length ? `${lowStock.length} products need a stock decision` : "Inventory is healthy", detail: lowStock.length ? `${lowStock.slice(0, 2).map((product) => product.name).join(" and ")}${lowStock.length > 2 ? " need review." : " need review."}` : "All listed products are above the low-stock threshold.", action: "Open inventory", target: "products" as Section },
-          { icon: Heart, tone: "bg-rose-50 text-rose-700", title: demandLeader?.score ? `${demandLeader.product.name} has the strongest intent` : "Customer intent is still building", detail: demandLeader?.score ? `${demandLeader.carts} cart signals and ${demandLeader.saves} saves point to this product.` : "As customers add products to carts and wishlists, their signals appear here.", action: "Review products", target: "products" as Section },
-          { icon: Layers3, tone: "bg-sky-50 text-sky-700", title: largestCollection.category ? `${largestCollection.category.name} is your deepest collection` : "No collection balance yet", detail: largestCollection.category ? `${largestCollection.count} products are grouped here. Use complementary collections to improve discovery.` : "Create a category to give your catalog structure.", action: "Manage collections", target: "categories" as Section }
-        ].map(({ icon: Icon, tone, title, detail, action, target }) => <div key={title} className="flex items-start gap-4 p-5"><span className={`grid size-10 shrink-0 place-items-center rounded-xl ${tone}`}><Icon size={18} /></span><div className="min-w-0 flex-1"><h3 className="font-bold text-slate-900">{title}</h3><p className="mt-1 text-sm leading-6 text-slate-500">{detail}</p></div><button onClick={() => onNavigate(target)} className="shrink-0 rounded-lg px-3 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-50">{action}</button></div>)}</div>
-      </DataPanel>
-      <section className="overflow-hidden rounded-2xl border border-white bg-white/90 shadow-[0_12px_34px_rgba(15,23,42,0.06)]"><div className="flex items-center justify-between border-b border-slate-100 px-6 py-5"><div><p className="text-[10px] font-bold uppercase tracking-[.14em] text-violet-600">Demand map</p><h2 className="mt-1 font-bold tracking-tight text-slate-900">Customer signals</h2></div><span className="grid size-10 place-items-center rounded-xl bg-violet-50 text-violet-700"><Target size={18} /></span></div><div className="space-y-4 p-5">{engagement.slice(0, 4).map(({ product, carts, saves, score }, index) => <div key={product.id} className="flex items-center gap-3"><span className="grid size-7 shrink-0 place-items-center rounded-lg bg-slate-100 text-xs font-bold text-slate-500">{index + 1}</span><Image src={product.imageUrl} alt="" width={40} height={40} className="size-10 rounded-lg object-cover" /><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold text-slate-800">{product.name}</p><p className="mt-0.5 text-xs text-slate-500">{carts} cart · {saves} saved</p></div><span className="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-bold text-violet-700">{score} pts</span></div>)}</div></section>
-    </div>
   </div>;
 }
 
