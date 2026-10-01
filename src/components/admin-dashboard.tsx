@@ -214,10 +214,10 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
 
       <div className="min-w-0">
         <header className="flex min-h-[78px] items-center justify-between border-b border-white/80 bg-white/80 px-4 backdrop-blur-xl sm:px-8">
-          <div className="relative hidden w-full max-w-md sm:block">
+          {section !== "campaigns" ? <div className="relative hidden w-full max-w-md sm:block">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
             <input value={query} onChange={(event) => setQuery(event.target.value)} disabled={section === "overview"} placeholder={section === "overview" ? "Select a workspace to search" : `Search ${section}...`} className="h-11 w-full rounded-xl border border-slate-200 bg-white/70 pl-10 pr-4 text-sm shadow-sm outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-600/10 disabled:opacity-60" />
-          </div>
+          </div> : null}
           <div className="ml-auto flex items-center gap-3">
             <span className="hidden rounded-full bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-700 ring-1 ring-emerald-100 sm:inline-flex"><span className="mr-2 mt-1 size-1.5 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(34,197,94,.12)]" />Store online</span>
             <Link href="/" className="grid size-11 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-md" title="Open storefront" aria-label="Open storefront"><ArrowUpRight size={18} /></Link>
