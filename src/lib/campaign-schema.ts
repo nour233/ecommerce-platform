@@ -3,6 +3,8 @@ import { z } from "zod";
 export const campaignContentSchema = z.object({
   title: z.string().trim().min(2).max(100),
   description: z.string().trim().min(10).max(1200),
+  // Older saved campaigns did not include a scenario; preserve their edit flow.
+  scenario: z.string().trim().max(650).default(""),
   bannerText: z.string().trim().min(2).max(140),
   socialCaption: z.string().trim().min(10).max(1500),
   productIds: z.array(z.string().min(1).max(100)).min(1).max(6).refine(ids => new Set(ids).size === ids.length, "Select unique products"),
