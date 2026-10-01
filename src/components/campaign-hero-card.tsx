@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
@@ -12,6 +12,7 @@ type HeroCampaign = CampaignContent & { id: string; updatedAt: string; products:
 /** Campaign copy layered directly on the home image, so the storefront has one clear hero. */
 export function CampaignHeroCard({ campaigns }: { campaigns: HeroCampaign[] }) {
   const [current, setCurrent] = useState(0);
+  const touchStartX = useRef<number | null>(null);
   const count = campaigns.length;
   const campaignFingerprint = campaigns.map((campaign) => `${campaign.id}:${campaign.updatedAt}`).join("|");
   useEffect(() => {
@@ -35,10 +36,17 @@ export function CampaignHeroCard({ campaigns }: { campaigns: HeroCampaign[] }) {
   if (!count) return null;
   const campaign = campaigns[current] ?? campaigns[0];
   const move = (change: number) => setCurrent((value) => (value + change + count) % count);
+  const onTouchEnd = (clientX: number) => {
+    if (touchStartX.current === null) return;
+    const distance = clientX - touchStartX.current;
+    touchStartX.current = null;
+    if (Math.abs(distance) < 45 || count < 2) return;
+    move(distance < 0 ? 1 : -1);
+  };
 
-  return <aside aria-label="Featured campaign" className="relative flex h-full min-h-[590px] flex-col overflow-hidden bg-[#172033] text-white">
+  return <aside aria-label="Featured campaign" onTouchStart={(event) => { touchStartX.current = event.touches[0]?.clientX ?? null; }} onTouchEnd={(event) => onTouchEnd(event.changedTouches[0]?.clientX ?? 0)} className="relative flex h-full min-h-[590px] touch-pan-y flex-col overflow-hidden bg-[#172033] text-white">
     <div key={campaign.id} className="relative h-[34%] min-h-44 shrink-0 animate-[lookbook-next_.65s_ease-out] bg-slate-800">{campaign.products[0] ? <Image src={campaign.products[0].imageUrl} alt={campaign.products[0].name} fill sizes="50vw" className="object-cover" /> : null}<div className="absolute inset-0 bg-gradient-to-t from-[#172033]/75 via-transparent to-transparent" /><p className="absolute left-6 top-6 flex items-center gap-2 rounded-full bg-[#172033] px-3 py-2 text-[10px] font-bold uppercase tracking-[.14em] text-[#ffb38f]"><Sparkles size={13} /> Featured campaign · {String(current + 1).padStart(2, "0")} / {String(count).padStart(2, "0")}</p></div>
     <div className="flex flex-1 flex-col justify-between bg-[#172033] px-8 pb-16 pt-5 sm:px-12 sm:pb-16 sm:pt-6 lg:px-16"><div><h1 className="text-3xl font-bold leading-[1.05] sm:text-4xl lg:text-5xl">{campaign.title}</h1><p className="mt-2 line-clamp-2 max-w-xl text-sm leading-6 text-white/80 sm:text-base">{campaign.description}</p><div className="mt-3 grid grid-cols-6 gap-2">{campaign.products.map((product) => <Link key={product.id} href={`/products/${product.slug}`} title={product.name} className="group relative aspect-square overflow-hidden rounded-md border border-white/15 bg-white/10"><Image src={product.imageUrl} alt={product.name} fill sizes="90px" className="object-cover transition duration-300 group-hover:scale-110" /></Link>)}</div></div><div className="mt-3 min-h-11"><Link href={`/campaigns/${campaign.id}`} className="inline-flex min-h-11 max-w-[calc(100%-112px)] items-center gap-3 truncate rounded-md bg-[#ef8354] px-5 text-sm font-bold text-white transition hover:bg-[#e76f51]"><span className="truncate">{campaign.bannerText}</span><ArrowRight size={17} className="shrink-0" /></Link></div></div>
-    {count > 1 ? <><button type="button" onClick={() => move(-1)} aria-label="Previous campaign" className="group absolute left-4 top-[17%] z-20 grid size-12 -translate-y-1/2 place-items-center rounded-full border border-white/35 bg-[#172033]/90 text-white shadow-xl backdrop-blur transition duration-300 hover:scale-110 hover:border-[#ffb38f] hover:bg-[#ef8354] sm:left-6"><ArrowLeft size={20} className="transition duration-300 group-hover:-translate-x-0.5" /></button><button type="button" onClick={() => move(1)} aria-label="Next campaign" className="group absolute right-4 top-[17%] z-20 grid size-12 -translate-y-1/2 place-items-center rounded-full border border-white/35 bg-[#172033]/90 text-white shadow-xl backdrop-blur transition duration-300 hover:scale-110 hover:border-[#ffb38f] hover:bg-[#ef8354] sm:right-6"><ArrowRight size={20} className="transition duration-300 group-hover:translate-x-0.5" /></button><div className="absolute bottom-[76px] left-8 z-10 flex gap-2 sm:left-12 lg:left-16">{campaigns.map((item, index) => <button key={item.id} type="button" onClick={() => setCurrent(index)} aria-label={`Show campaign ${index + 1}`} className={`h-1.5 rounded-full transition-all ${index === current ? "w-9 bg-[#ffb38f]" : "w-2 bg-white/50"}`} />)}</div></> : null}
+    {count > 1 ? <><button type="button" onClick={() => move(-1)} aria-label="Previous campaign" className="group absolute left-4 top-[17%] z-20 hidden size-12 -translate-y-1/2 place-items-center rounded-full border border-white/35 bg-[#172033]/90 text-white shadow-xl backdrop-blur transition duration-300 hover:scale-110 hover:border-[#ffb38f] hover:bg-[#ef8354] lg:grid"><ArrowLeft size={20} className="transition duration-300 group-hover:-translate-x-0.5" /></button><button type="button" onClick={() => move(1)} aria-label="Next campaign" className="group absolute right-4 top-[17%] z-20 hidden size-12 -translate-y-1/2 place-items-center rounded-full border border-white/35 bg-[#172033]/90 text-white shadow-xl backdrop-blur transition duration-300 hover:scale-110 hover:border-[#ffb38f] hover:bg-[#ef8354] lg:grid"><ArrowRight size={20} className="transition duration-300 group-hover:translate-x-0.5" /></button><div className="absolute bottom-[76px] left-8 z-10 flex gap-2 sm:left-12 lg:left-16">{campaigns.map((item, index) => <button key={item.id} type="button" onClick={() => setCurrent(index)} aria-label={`Show campaign ${index + 1}`} className={`h-1.5 rounded-full transition-all ${index === current ? "w-9 bg-[#ffb38f]" : "w-2 bg-white/50"}`} />)}</div></> : null}
   </aside>;
 }
