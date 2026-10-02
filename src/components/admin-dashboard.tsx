@@ -8,6 +8,7 @@ import {
   Activity,
   Boxes,
   BrainCircuit,
+  Download,
   ExternalLink,
   Heart,
   LayoutDashboard,
@@ -219,9 +220,9 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
 
       <div className="min-w-0">
         <header className="flex min-h-[78px] items-center justify-between border-b border-white/80 bg-white/80 px-4 backdrop-blur-xl sm:px-8">
-          {section !== "campaigns" ? <div className="relative hidden w-full max-w-md sm:block">
+          {section !== "campaigns" && section !== "overview" ? <div className="relative hidden w-full max-w-md sm:block">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
-            <input value={query} onChange={(event) => setQuery(event.target.value)} disabled={section === "overview"} placeholder={section === "overview" ? "Select a workspace to search" : `Search ${section}...`} className="h-11 w-full rounded-xl border border-slate-200 bg-white/70 pl-10 pr-4 text-sm shadow-sm outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-600/10 disabled:opacity-60" />
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={`Search ${section}...`} className="h-11 w-full rounded-xl border border-slate-200 bg-white/70 pl-10 pr-4 text-sm shadow-sm outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-600/10 disabled:opacity-60" />
           </div> : null}
           <div className="ml-auto flex items-center gap-3">
             <span className="hidden rounded-full bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-700 ring-1 ring-emerald-100 sm:inline-flex"><span className="mr-2 mt-1 size-1.5 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(34,197,94,.12)]" />Store online</span>
@@ -390,9 +391,20 @@ function EmptyCommerce({ message }: { message: string }) { return <p className="
 
 function PrimaryButton({ onClick, icon: Icon, children }: { onClick: () => void; icon: typeof Plus; children: React.ReactNode }) { return <button type="button" onClick={onClick} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-emerald-700 px-4 text-sm font-bold text-white shadow-lg shadow-emerald-900/15 transition hover:-translate-y-0.5 hover:bg-emerald-800 hover:shadow-xl"><Icon size={18} />{children}</button>; }
 function StoreAuditor({ report, products, userCommerce, busy, onAudit, onNavigate }: { report: AdminAuditReport | null; products: Product[]; userCommerce: UserCommerce[]; busy: boolean; onAudit: () => void; onNavigate: (section: Section) => void }) {
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  async function downloadReport() {
+    if (!report) return;
+    setExporting(true); setExportError(null);
+    try {
+      const { createAuditPdf } = await import("@/lib/audit-pdf");
+      createAuditPdf(report, products, userCommerce).save("commercecraft-diagnostic.pdf");
+    } catch { setExportError("Le PDF n'a pas pu etre genere. Reessayez."); }
+    finally { setExporting(false); }
+  }
   return <section className="overflow-hidden rounded-2xl border border-violet-100 bg-white shadow-[0_12px_34px_rgba(15,23,42,0.06)]">
     <div className="flex flex-wrap items-center justify-between gap-4 border-b border-violet-100 bg-[linear-gradient(110deg,#f7f2ff,#ffffff_62%)] px-6 py-5"><div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-2xl bg-violet-600 text-white shadow-lg shadow-violet-900/20"><BrainCircuit size={21} /></span><div><p className="text-[10px] font-bold uppercase tracking-[.15em] text-violet-700">Assistant administrateur</p><h2 className="mt-0.5 font-bold tracking-tight text-slate-900">AI Store Auditor</h2><p className="mt-1 text-xs font-medium text-slate-500">Il détecte les problèmes du catalogue et les opportunités à traiter.</p></div></div><button type="button" disabled={busy} onClick={onAudit} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-violet-700 px-4 text-sm font-bold text-white shadow-lg shadow-violet-900/15 transition hover:-translate-y-0.5 hover:bg-violet-800 disabled:cursor-wait disabled:opacity-60"><Sparkles size={16} />{busy ? "Analyse en cours…" : report ? "Relancer l’audit" : "Analyser ma boutique"}</button></div>
-    {report ? <div className="p-5"><AuditVisualBrief narrative={report.narrative} products={products} userCommerce={userCommerce} onProducts={() => onNavigate("products")} onCampaign={() => onNavigate("campaigns")} /><div className="mt-4 flex flex-wrap gap-3"><button type="button" onClick={() => onNavigate("products")} className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-200">Voir les produits →</button><button type="button" onClick={() => onNavigate("categories")} className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-200">Voir les catégories →</button><button type="button" onClick={() => onNavigate("campaigns")} className="rounded-lg bg-violet-100 px-3 py-2 text-xs font-bold text-violet-800 transition hover:bg-violet-200">Créer une campagne →</button></div><p className="mt-4 text-right text-[11px] font-medium text-slate-400">Analyse générée par {report.source === "anthropic" ? "Claude AI" : "Groq AI"} à partir de données anonymisées</p></div> : <div className="flex items-center gap-4 px-6 py-6 text-sm text-slate-600"><span className="grid size-10 shrink-0 place-items-center rounded-xl bg-violet-50 text-violet-700"><TrendingUp size={18} /></span><p>Cliquez une fois : l’IA vérifie les descriptions, le stock, les catégories et les signaux d’intérêt sans exposer les données personnelles des clients.</p></div>}
+    {report ? <div className="p-5"><div className="mb-5 flex flex-wrap items-center justify-end gap-3"><button type="button" disabled={busy || exporting} onClick={() => void downloadReport()} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-4 text-sm font-bold text-violet-700 transition hover:bg-violet-100 disabled:opacity-50"><Download size={17} />{exporting ? "Préparation du PDF…" : "Télécharger le rapport PDF"}</button></div>{exportError ? <p role="alert" className="mb-4 text-sm text-rose-600">{exportError}</p> : null}<AuditVisualBrief narrative={report.narrative} products={products} userCommerce={userCommerce} onProducts={() => onNavigate("products")} onCampaign={() => onNavigate("campaigns")} /><div className="mt-4 flex flex-wrap gap-3"><button type="button" onClick={() => onNavigate("products")} className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-200">Voir les produits →</button><button type="button" onClick={() => onNavigate("categories")} className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-200">Voir les catégories →</button><button type="button" onClick={() => onNavigate("campaigns")} className="rounded-lg bg-violet-100 px-3 py-2 text-xs font-bold text-violet-800 transition hover:bg-violet-200">Créer une campagne →</button></div><p className="mt-4 text-right text-[11px] font-medium text-slate-400">Analyse générée par {report.source === "anthropic" ? "Claude AI" : "Groq AI"} à partir de données anonymisées</p></div> : <div className="flex items-center gap-4 px-6 py-6 text-sm text-slate-600"><span className="grid size-10 shrink-0 place-items-center rounded-xl bg-violet-50 text-violet-700"><TrendingUp size={18} /></span><p>Cliquez une fois : l’IA vérifie les descriptions, le stock, les catégories et les signaux d’intérêt sans exposer les données personnelles des clients.</p></div>}
   </section>;
 }
 
