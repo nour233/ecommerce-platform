@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   ArrowUpRight,
   Activity,
@@ -82,6 +82,8 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
   const [userId, setUserId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiReady, setAiReady] = useState(false);
+  const productGeneration = useRef(0);
   const [audit, setAudit] = useState<AdminAuditReport | null>(null);
   const [auditBusy, setAuditBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -98,6 +100,7 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
   function selectSection(value: Section) { setSection(value); setQuery(""); setMessage(null); }
   function report(error: unknown) { setMessage(error instanceof Error ? error.message : "The operation failed"); }
   function openProduct(product?: Product) {
+    productGeneration.current += 1; setAiGenerating(false); setAiReady(false);
     setMessage(null); setProductId(product?.id ?? null);
     setProductDraft(product ? { name: product.name, slug: product.slug, description: product.description, categoryId: product.categoryId, price: product.price, rating: product.rating, stock: product.stock, imageUrl: product.imageUrl, tags: product.tags } : { ...emptyProduct, categoryId: categories[0]?.id ?? "" });
   }
@@ -115,11 +118,13 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
       setMessage("Upload or paste a product image before using AI generation.");
       return;
     }
-    setAiGenerating(true); setMessage(null);
+    const generation = ++productGeneration.current;
+    setAiGenerating(true); setAiReady(false); setMessage(null);
     try {
       const suggestion = await adminRequest<AiProductSuggestion>("/api/admin/ai/product-details", { method: "POST", body: JSON.stringify({ imageUrl: sourceImage }) });
-      if (suggestion) setProductDraft((current) => current ? { ...current, ...suggestion, imageUrl: sourceImage } : current);
-    } catch (error) { report(error); } finally { setAiGenerating(false); }
+      if (generation !== productGeneration.current) return;
+      if (suggestion) { setProductDraft((current) => current ? { ...current, ...suggestion, price: current.price, imageUrl: sourceImage } : current); setAiReady(true); }
+    } catch (error) { if (generation === productGeneration.current) report(error); } finally { if (generation === productGeneration.current) setAiGenerating(false); }
   }
   async function runStoreAudit() {
     setAuditBusy(true); setMessage(null);
@@ -230,7 +235,7 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
               <p className="mb-2 text-xs font-bold uppercase tracking-[0.15em] text-emerald-700">{section === "overview" ? `Bon retour, ${currentUser.name.split(" ")[0]}` : "Gestion du catalogue"}</p>
               <h1 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">{section === "overview" ? "Centre de pilotage" : nav.find((item) => item.id === section)?.label}</h1>
             </div>
-            {section === "products" ? <PrimaryButton onClick={() => openProduct()} icon={PackagePlus}>Add product</PrimaryButton> : null}
+            {section === "products" ? <PrimaryButton onClick={() => openProduct()} icon={PackagePlus}>Créer depuis une photo</PrimaryButton> : null}
             {section === "categories" ? <PrimaryButton onClick={() => openCategory()} icon={Plus}>Add category</PrimaryButton> : null}
           </div>
 
@@ -286,22 +291,29 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
       </div>
 
       {productDraft ? (
-        <Editor title={productId ? "Edit product" : "Add a product"} subtitle="Keep storefront information accurate and complete." onClose={() => setProductDraft(null)}>
-          <form onSubmit={saveProduct} className="grid gap-4 sm:grid-cols-2">
-            <Field label="Product name"><input required className={inputClass} value={productDraft.name} onChange={(e) => setProductDraft({ ...productDraft, name: e.target.value })} /></Field>
-            <Field label="URL slug"><input required className={inputClass} value={productDraft.slug} onChange={(e) => setProductDraft({ ...productDraft, slug: e.target.value })} /></Field>
-            <Field label="Category"><select required className={inputClass} value={productDraft.categoryId} onChange={(e) => setProductDraft({ ...productDraft, categoryId: e.target.value })}>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></Field>
-            <Field label="Product image">
-              <CloudinaryImageField inputClassName={inputClass} value={productDraft.imageUrl} onChange={(imageUrl) => setProductDraft({ ...productDraft, imageUrl })} onUploaded={(imageUrl) => void generateProductDetails(imageUrl)} />
-              <button type="button" disabled={!productDraft.imageUrl || aiGenerating} onClick={() => void generateProductDetails()} className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-3 text-sm font-bold text-violet-700 transition hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-50"><WandSparkles size={16} className={aiGenerating ? "animate-pulse" : ""} />{aiGenerating ? "AI is analyzing the image…" : "Generate product details with AI"}</button>
-              <p className="mt-2 text-xs leading-5 text-slate-500">AI suggests editable catalog details from the image. Review them before saving.</p>
-            </Field>
-            <Field label="Price"><input required type="number" min="0" step="0.01" className={inputClass} value={editableNumber(productDraft.price)} onChange={(e) => setProductDraft({ ...productDraft, price: parseEditableNumber(e.target.value) })} /></Field>
+        <Editor wide title={productId ? "Studio produit · Modifier" : "Une photo. Une fiche produit."} subtitle="Déposez une photo, laissez l’IA proposer votre fiche, puis personnalisez-la." onClose={() => { productGeneration.current += 1; setProductDraft(null); setAiGenerating(false); }}>
+          <form onSubmit={saveProduct} className="grid items-start gap-6 lg:grid-cols-[.85fr_1.15fr]">
+            <fieldset disabled={aiGenerating || busy} className="min-w-0 rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 p-5">
+              <p className="text-[10px] font-bold uppercase tracking-[.18em] text-violet-600">01 · Votre photo</p>
+              <h3 className="mt-2 text-xl font-bold tracking-tight">Tout commence par une image</h3>
+              <p className="mb-5 mt-2 text-sm leading-6 text-slate-500">L’IA observe le produit et propose son nom, sa catégorie, sa description et ses tags.</p>
+              <CloudinaryImageField largePreview inputClassName={inputClass} value={productDraft.imageUrl} onChange={(imageUrl) => { setAiReady(false); setProductDraft((current) => current ? { ...current, imageUrl } : current); }} onUploaded={(imageUrl) => void generateProductDetails(imageUrl)} />
+              <button type="button" disabled={!productDraft.imageUrl || aiGenerating} onClick={() => void generateProductDetails()} className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-violet-600 px-4 text-sm font-bold text-white shadow-lg shadow-violet-200 transition hover:bg-violet-700 disabled:opacity-50"><WandSparkles size={19} className={aiGenerating ? "animate-pulse" : ""} />{aiGenerating ? "L’IA observe votre produit…" : aiReady ? "Recréer la fiche avec l’IA" : "Transformer la photo en fiche"}</button>
+              <p className="mt-3 text-xs leading-5 text-slate-500">La génération démarre après l’import. Pour une URL, utilisez le bouton.</p>
+            </fieldset>
+            <fieldset disabled={aiGenerating || busy} className="min-w-0 grid gap-4 rounded-3xl border border-slate-200 bg-white p-5 sm:grid-cols-2">
+              <div className="sm:col-span-2"><p className="text-[10px] font-bold uppercase tracking-[.18em] text-emerald-600">02 · Votre fiche</p><h3 className="mt-2 text-xl font-bold tracking-tight">{aiGenerating ? "Votre fiche se prépare" : aiReady ? "La proposition IA est prête" : "De l’image à votre vitrine"}</h3><p className="mt-2 text-xs leading-5 text-slate-500">{aiReady ? "Vérifiez les suggestions et renseignez votre prix et votre stock avant d’enregistrer." : "Les champs restent modifiables. Le prix et le stock sont à renseigner par vos soins."}</p>{aiGenerating ? <div role="status" className="mt-4 space-y-2 rounded-xl bg-violet-50 p-4 text-sm text-violet-700"><span className="inline-flex items-center gap-2"><Sparkles size={16} className="animate-pulse" />Analyse de l’image et rédaction en cours…</span><div className="h-2 animate-pulse rounded-full bg-violet-200" /><div className="h-2 w-2/3 animate-pulse rounded-full bg-violet-200" /></div> : null}{message ? <p role="alert" className="mt-3 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{message}</p> : null}</div>
+            <Field label="Nom du produit"><input required className={inputClass} value={productDraft.name} onChange={(e) => setProductDraft({ ...productDraft, name: e.target.value })} /></Field>
+            <Field label="Adresse du produit"><input required className={inputClass} value={productDraft.slug} onChange={(e) => setProductDraft({ ...productDraft, slug: e.target.value })} /></Field>
+            <Field label="Catégorie"><select required className={inputClass} value={productDraft.categoryId} onChange={(e) => setProductDraft({ ...productDraft, categoryId: e.target.value })}>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></Field>
+            <Field label="Prix"><input required type="number" min="0" step="0.01" className={inputClass} value={editableNumber(productDraft.price)} onChange={(e) => setProductDraft({ ...productDraft, price: parseEditableNumber(e.target.value) })} /></Field>
             <Field label="Stock"><input required type="number" min="0" className={inputClass} value={productDraft.stock} onChange={(e) => setProductDraft({ ...productDraft, stock: parseEditableNumber(e.target.value) })} /></Field>
-            <Field label="Rating"><input required type="number" min="0" max="5" step="0.1" className={inputClass} value={editableNumber(productDraft.rating)} onChange={(e) => setProductDraft({ ...productDraft, rating: parseEditableNumber(e.target.value) })} /></Field>
+            <Field label="Note"><input required type="number" min="0" max="5" step="0.1" className={inputClass} value={editableNumber(productDraft.rating)} onChange={(e) => setProductDraft({ ...productDraft, rating: parseEditableNumber(e.target.value) })} /></Field>
             <Field label="Tags"><input className={inputClass} value={productDraft.tags.join(", ")} onChange={(e) => setProductDraft({ ...productDraft, tags: e.target.value.split(",").map((tag) => tag.trim()).filter(Boolean) })} /></Field>
             <div className="sm:col-span-2"><Field label="Description"><textarea required minLength={10} rows={4} className={`${inputClass} py-3`} value={productDraft.description} onChange={(e) => setProductDraft({ ...productDraft, description: e.target.value })} /></Field></div>
-            <FormActions busy={busy} onCancel={() => setProductDraft(null)} />
+            {productDraft.tags.length ? <div className="flex flex-wrap gap-2 sm:col-span-2">{productDraft.tags.map((tag, index) => <span key={`${tag}-${index}`} className="rounded-full bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700">#{tag}</span>)}</div> : null}
+            <FormActions busy={busy || aiGenerating} onCancel={() => { productGeneration.current += 1; setProductDraft(null); setAiGenerating(false); }} />
+            </fieldset>
           </form>
         </Editor>
       ) : null}
@@ -394,6 +406,6 @@ function UserPresence({ lastActiveAt }: { lastActiveAt?: string }) {
   return <span className="inline-flex items-center gap-2 text-sm font-medium text-slate-500"><span className="size-2 rounded-full bg-slate-300" />Offline</span>;
 }
 function RowActions({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) { return <div className="flex justify-end gap-1"><button type="button" title="Edit" aria-label="Edit" onClick={onEdit} className="grid size-9 place-items-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"><Pencil size={17} /></button><button type="button" title="Delete" aria-label="Delete" onClick={onDelete} className="grid size-9 place-items-center rounded-md text-slate-400 transition hover:bg-red-50 hover:text-red-600"><Trash2 size={17} /></button></div>; }
-function Editor({ title, subtitle, onClose, children }: { title: string; subtitle: string; onClose: () => void; children: React.ReactNode }) { return <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/60 p-3 backdrop-blur-md sm:p-5" role="dialog" aria-modal="true" aria-label={title}><div className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-[#f8fafc] shadow-2xl shadow-slate-950/30 sm:max-h-[calc(100dvh-2.5rem)]"><div className="flex shrink-0 items-start justify-between border-b border-slate-200 bg-white px-5 py-4"><div><p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">Catalog editor</p><h2 className="text-xl font-bold tracking-tight">{title}</h2><p className="mt-1 text-xs text-slate-500">{subtitle}</p></div><button type="button" onClick={onClose} className="grid size-9 place-items-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" aria-label="Close"><X size={18} /></button></div><div className="overflow-y-auto p-5">{children}</div></div></div>; }
+function Editor({ title, subtitle, onClose, children, wide = false }: { title: string; subtitle: string; onClose: () => void; children: React.ReactNode; wide?: boolean }) { return <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/60 p-3 backdrop-blur-md sm:p-5" role="dialog" aria-modal="true" aria-label={title}><div className={`flex max-h-[calc(100dvh-1.5rem)] w-full ${wide ? "max-w-6xl" : "max-w-xl"} flex-col overflow-hidden rounded-2xl bg-[#f8fafc] shadow-2xl shadow-slate-950/30 sm:max-h-[calc(100dvh-2.5rem)]`}><div className="flex shrink-0 items-start justify-between border-b border-slate-200 bg-white px-5 py-4"><div><p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">Catalog editor</p><h2 className="text-xl font-bold tracking-tight">{title}</h2><p className="mt-1 text-xs text-slate-500">{subtitle}</p></div><button type="button" onClick={onClose} className="grid size-9 place-items-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" aria-label="Close"><X size={18} /></button></div><div className="overflow-y-auto p-5">{children}</div></div></div>; }
 function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="block"><span className="mb-2 block text-sm font-bold text-slate-700">{label}</span>{children}</label>; }
 function FormActions({ busy, onCancel }: { busy: boolean; onCancel: () => void }) { return <div className="flex justify-end gap-3 border-t border-slate-200 pt-6 sm:col-span-2"><button type="button" onClick={onCancel} className="min-h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50">Cancel</button><button disabled={busy} className="min-h-11 rounded-xl bg-emerald-700 px-5 text-sm font-bold text-white shadow-lg shadow-emerald-900/15 transition hover:-translate-y-0.5 hover:bg-emerald-800 disabled:opacity-50">{busy ? "Saving..." : "Save changes"}</button></div>; }
