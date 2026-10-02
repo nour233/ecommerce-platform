@@ -15,10 +15,10 @@ export default async function HomePage() {
 
   return (
     <div className="bg-white">
-      <section className="relative isolate h-[72vh] min-h-[590px] max-h-[760px] overflow-hidden bg-[#172033] text-white">
+      <section className={`relative isolate overflow-hidden bg-[#172033] text-white ${publishedCampaigns.length ? "flex min-h-[590px] flex-col" : "h-[72vh] min-h-[590px] max-h-[760px]"}`}>
         <Image src="https://images.unsplash.com/photo-1556228453-efd6c1ff04f6?auto=format&fit=crop&w=2000&q=90" alt="A curated modern living room" fill priority className="object-cover object-center" />
         <div className="absolute inset-0 bg-[#111827]/65" />
-        <div className={`relative h-full ${publishedCampaigns.length ? "grid lg:grid-cols-2" : "mx-auto flex max-w-[1500px] items-center px-4 sm:px-6 lg:px-8"}`}>
+        <div className={`relative h-full ${publishedCampaigns.length ? "grid flex-1 lg:grid-cols-2" : "mx-auto flex max-w-[1500px] items-center px-4 sm:px-6 lg:px-8"}`}>
           <div className={`items-center ${publishedCampaigns.length ? "hidden px-4 sm:px-10 lg:flex lg:px-16" : "flex"}`}><div className="max-w-2xl pb-10">
             <p className="flex items-center gap-2 text-sm font-semibold uppercase text-[#ffb38f]"><Sparkles size={16} /> The new everyday collection</p>
             <h1 className="mt-5 text-5xl font-bold leading-[1.05] sm:text-6xl lg:text-7xl">Better objects for everyday living.</h1>
@@ -29,7 +29,7 @@ export default async function HomePage() {
             </div>
           </div></div>{publishedCampaigns.length ? <CampaignHeroCard campaigns={publishedCampaigns} /> : null}
         </div>
-        <div className="absolute bottom-0 left-0 right-0 border-t border-white/15 bg-black/20 backdrop-blur-md">
+        <div className={`${publishedCampaigns.length ? "relative shrink-0" : "absolute bottom-0 left-0 right-0"} border-t border-white/15 bg-black/20 backdrop-blur-md`}>
           <div className="mx-auto grid max-w-[1500px] grid-cols-3 divide-x divide-white/15 px-4 sm:px-6 lg:px-8">
             {["Curated essentials", "Secure checkout", "30-day returns"].map((text, index) => <div key={text} className="flex items-center justify-center gap-2 px-2 py-4 text-center text-[11px] font-semibold uppercase text-white/80 sm:text-xs">{index === 0 ? <BadgeCheck size={16} /> : index === 1 ? <PackageCheck size={16} /> : <RefreshCcw size={16} />}<span>{text}</span></div>)}
           </div>
