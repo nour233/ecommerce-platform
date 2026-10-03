@@ -78,6 +78,22 @@ describe("campaign generation and publication", () => {
     expect(result.status).toBe("draft");
     expect(result.productIds.length).toBeGreaterThan(0);
   });
+  it("keeps a Mother's Day fallback relevant when the AI provider is unavailable", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("ECONNREFUSED")));
+    const result = await campaignService.generate({ ...brief, theme: "Fête des Mères : un cadeau attentionné" }, "admin");
+    const selected = result.productIds.map(id => store.products.find(product => product.id === id)?.name);
+    expect(selected).toContain("Brew Ritual Coffee Set");
+    expect(selected).not.toContain("Nike Free RN Running Shoes");
+  });
+  it("asks Claude to return the campaign through a structured tool result", async () => {
+    vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ content: [{ type: "tool_use", input: content }] })));
+    await campaignService.generate(brief, "admin");
+    const [url, request] = vi.mocked(fetch).mock.calls[0];
+    expect(url).toBe("https://api.anthropic.com/v1/messages");
+    const body = JSON.parse(request!.body as string);
+    expect(body.tool_choice).toEqual({ type: "tool", name: "create_campaign" });
+  });
   it("rejects duplicate products and invalid briefs", () => {
     expect(campaignContentSchema.safeParse({ ...content, productIds: [product.id, product.id] }).success).toBe(false);
     expect(campaignBriefSchema.safeParse({ ...brief, theme: "" }).success).toBe(false);
