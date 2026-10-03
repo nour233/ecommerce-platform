@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, Download, LockKeyhole, Minus, PackageCheck, Plus, ShoppingBag, Trash2, Truck } from "lucide-react";
+import { ArrowLeft, LockKeyhole, Minus, PackageCheck, Plus, ShoppingBag, Trash2, Truck } from "lucide-react";
 import type { CartSummary } from "@/types";
 import { useCart } from "@/components/cart-provider";
 
@@ -19,7 +19,6 @@ export function CartClient() {
   const [error, setError] = useState("");
   const [pending, setPending] = useState<string | null>(null);
   const [checkoutNotice, setCheckoutNotice] = useState("");
-  const [invoiceBusy, setInvoiceBusy] = useState(false);
 
   const loadCart = useCallback(async () => {
     setError("");
@@ -55,12 +54,8 @@ export function CartClient() {
   const freeShippingThreshold = 100;
   const remaining = Math.max(0, freeShippingThreshold - cart.subtotal);
   const progress = Math.min(100, cart.subtotal / freeShippingThreshold * 100);
-  async function downloadInvoice() {
-    setInvoiceBusy(true); setError("");
-    try { const { downloadCartInvoice } = await import("@/lib/invoice-pdf"); await downloadCartInvoice(cart); }
-    catch { setError("The invoice could not be created. Please try again."); }
-    finally { setInvoiceBusy(false); }
-  }
+  const invoiceReference = `CC-CART-${cart.items.map((item) => item.productId).sort().join("-").slice(0, 20).toUpperCase()}`;
+  const invoiceQrCode = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&format=png&data=${encodeURIComponent(JSON.stringify({ issuer: "CommerceCraft", invoice: invoiceReference, total: Number(cart.subtotal.toFixed(2)), currency: "USD", items: cart.itemCount }))}`;
 
   return (
     <div>
@@ -81,7 +76,7 @@ export function CartClient() {
 
         <aside className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-lg shadow-slate-900/5 lg:sticky lg:top-32">
           <div className="bg-[#172033] p-5 text-white"><div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-md bg-white/10"><Truck size={19} /></span><div><p className="text-sm font-semibold">{remaining > 0 ? `$${remaining.toFixed(2)} away from free shipping` : "You unlocked free shipping"}</p><p className="mt-0.5 text-xs text-slate-400">Available on orders over $100</p></div></div><div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/15"><div className="h-full rounded-full bg-[#ef8354] transition-all" style={{ width: `${progress}%` }} /></div></div>
-          <div className="p-6"><h2 className="text-xl font-bold text-[#172033]">Order summary</h2><dl className="mt-6 space-y-4 text-sm"><div className="flex justify-between text-slate-600"><dt>Subtotal</dt><dd className="font-semibold text-slate-900">${cart.subtotal.toFixed(2)}</dd></div><div className="flex justify-between text-slate-600"><dt>Shipping</dt><dd className="font-semibold text-emerald-700">{remaining === 0 ? "Free" : "Calculated next"}</dd></div><div className="flex justify-between text-slate-600"><dt>Taxes</dt><dd>Calculated next</dd></div><div className="flex justify-between border-t border-slate-200 pt-4 text-lg"><dt className="font-bold">Total</dt><dd className="font-bold">${cart.subtotal.toFixed(2)}</dd></div></dl><button type="button" onClick={() => setCheckoutNotice("Your cart is ready. Connect a payment provider before production checkout.")} className="mt-6 flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-[#ef8354] px-5 text-sm font-bold text-white transition hover:bg-[#e76f51]"><LockKeyhole size={17} />Continue to checkout</button><button type="button" disabled={invoiceBusy} onClick={() => void downloadInvoice()} className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-5 text-sm font-bold text-slate-700 transition hover:border-[#ef8354] hover:bg-[#fff2ec] disabled:opacity-50"><Download size={17} />{invoiceBusy ? "Creating invoice…" : "Download invoice with QR code"}</button>{checkoutNotice ? <p role="status" className="mt-3 text-center text-xs leading-5 text-slate-500">{checkoutNotice}</p> : null}<div className="mt-5 flex items-center justify-center gap-2 text-xs text-slate-400"><PackageCheck size={15} />Secure checkout and protected data</div></div>
+          <div className="p-6"><h2 className="text-xl font-bold text-[#172033]">Order summary</h2><dl className="mt-6 space-y-4 text-sm"><div className="flex justify-between text-slate-600"><dt>Subtotal</dt><dd className="font-semibold text-slate-900">${cart.subtotal.toFixed(2)}</dd></div><div className="flex justify-between text-slate-600"><dt>Shipping</dt><dd className="font-semibold text-emerald-700">{remaining === 0 ? "Free" : "Calculated next"}</dd></div><div className="flex justify-between text-slate-600"><dt>Taxes</dt><dd>Calculated next</dd></div><div className="flex justify-between border-t border-slate-200 pt-4 text-lg"><dt className="font-bold">Total</dt><dd className="font-bold">${cart.subtotal.toFixed(2)}</dd></div></dl><div className="mt-6 flex items-center gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-3"><img src={invoiceQrCode} width="76" height="76" alt="Invoice verification QR code" className="size-[76px] rounded-lg bg-white p-1" /><div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-[.14em] text-slate-400">Invoice verification</p><p className="mt-1 truncate text-sm font-bold text-slate-800">{invoiceReference}</p><p className="mt-1 text-xs leading-5 text-slate-500">Scan to read the invoice reference and total.</p></div></div><button type="button" onClick={() => setCheckoutNotice("Your cart is ready. Connect a payment provider before production checkout.")} className="mt-6 flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-[#ef8354] px-5 text-sm font-bold text-white transition hover:bg-[#e76f51]"><LockKeyhole size={17} />Continue to checkout</button>{checkoutNotice ? <p role="status" className="mt-3 text-center text-xs leading-5 text-slate-500">{checkoutNotice}</p> : null}<div className="mt-5 flex items-center justify-center gap-2 text-xs text-slate-400"><PackageCheck size={15} />Secure checkout and protected data</div></div>
         </aside>
       </div>
       <Link href="/products" className="mt-7 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-950"><ArrowLeft size={16} />Continue shopping</Link>
