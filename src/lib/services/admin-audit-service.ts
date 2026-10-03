@@ -15,7 +15,7 @@ export const adminAuditService = {
     for (const item of activity.cart) cartCounts.set(item.productId, (cartCounts.get(item.productId) ?? 0) + item.quantity);
     for (const item of activity.wishlist) wishlistCounts.set(item.productId, (wishlistCounts.get(item.productId) ?? 0) + 1);
     const catalog = products.map(({ id, name, categoryName, stock, rating, tags, description }) => ({ id, name, categoryName, stock, rating, tags, descriptionLength: description.length }));
-    const prompt = `Analyse cette boutique e-commerce pour son administrateur. Rédige un audit court et concret en français, avec exactement trois parties : « Priorité à traiter », « Opportunité de croissance » et « Qualité du catalogue ». Dans chaque partie, donne une recommandation basée uniquement sur les données ci-dessous. Ne mentionne jamais les identités de clients, le chiffre d’affaires, les conversions, ni des informations absentes des données. Aucun JSON : texte clair en 6 à 10 phrases.\n\nCatalogue : ${JSON.stringify(catalog)}\nCatégories : ${JSON.stringify(categories.map(({ id, name }) => ({ id, name })))}\nQuantités dans les paniers par produit : ${JSON.stringify(Object.fromEntries(cartCounts))}\nAjouts en favoris par produit : ${JSON.stringify(Object.fromEntries(wishlistCounts))}`;
+    const prompt = `Analyze this ecommerce store for its administrator. Write a concise, actionable audit in English with exactly three parts: “Priority to address”, “Growth opportunity”, and “Catalog quality”. In each part, give one recommendation based only on the data below. Never mention customer identities, revenue, conversions, or facts absent from the data. No JSON: clear prose in 6 to 10 sentences.\n\nCatalog: ${JSON.stringify(catalog)}\nCategories: ${JSON.stringify(categories.map(({ id, name }) => ({ id, name })))}\nCart quantities by product: ${JSON.stringify(Object.fromEntries(cartCounts))}\nWishlist saves by product: ${JSON.stringify(Object.fromEntries(wishlistCounts))}`;
     try {
       const response = await fetch(useAnthropic ? "https://api.anthropic.com/v1/messages" : "https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
@@ -26,17 +26,17 @@ export const adminAuditService = {
       const payload = await response.json() as { content?: Array<{ type?: string; text?: string }>; choices?: Array<{ message?: { content?: string } }>; error?: { message?: string } };
       if (!response.ok) {
         const busy = response.status === 429 || /rate limit|quota/i.test(payload.error?.message ?? "");
-        throw new AppError(busy ? "Claude est occupé pour le moment. Réessayez dans quelques instants." : "Claude n’a pas pu terminer l’audit. Réessayez dans un instant.", busy ? 429 : 502, "AUDIT_REQUEST_FAILED");
+        throw new AppError(busy ? "Claude is busy right now. Please try again in a moment." : "Claude could not complete the audit. Please try again.", busy ? 429 : 502, "AUDIT_REQUEST_FAILED");
       }
       const rawNarrative = useAnthropic
         ? payload.content?.filter((item) => item.type === "text").map((item) => item.text ?? "").join("")
         : payload.choices?.[0]?.message?.content;
       const narrative = (rawNarrative ?? "").trim();
-      if (!narrative) throw new AppError("Claude n’a pas renvoyé de rapport. Relancez l’audit.", 502, "AUDIT_EMPTY_RESPONSE");
+      if (!narrative) throw new AppError("Claude did not return a report. Run the audit again.", 502, "AUDIT_EMPTY_RESPONSE");
       return { narrative: narrative.slice(0, 1_800), source: useAnthropic ? "anthropic" : "groq" };
     } catch (error) {
       if (error instanceof AppError) throw error;
-      throw new AppError("L’audit IA est temporairement indisponible. Réessayez dans un instant.", 503, "AUDIT_UNAVAILABLE");
+      throw new AppError("The AI audit is temporarily unavailable. Please try again.", 503, "AUDIT_UNAVAILABLE");
     }
   }
 };
