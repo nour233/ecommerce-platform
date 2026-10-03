@@ -60,7 +60,7 @@ export function CloudinaryImageField({ value, onChange, onUploaded, inputClassNa
       <p className="text-xs text-slate-500">JPG, PNG, or WebP · maximum 5 MB</p>
       <input required type="url" placeholder="Or paste an image URL" className={inputClassName} value={value} onChange={(event) => onChange(event.target.value)} />
       {error ? <p role="alert" className="text-xs font-medium text-rose-600">{error}</p> : null}
-      {value ? <div className={`relative overflow-hidden rounded-2xl border border-slate-200 bg-white ${largePreview ? "h-72" : "h-32"}`}><Image src={value} alt="Selected image preview" fill sizes={largePreview ? "(max-width: 1024px) 90vw, 450px" : "320px"} className={largePreview ? "object-contain p-4" : "object-cover"} /></div> : largePreview ? <div className="grid h-56 place-content-center gap-3 rounded-2xl border border-dashed border-violet-200 bg-white/60 text-center text-violet-400"><ImageUp size={44} className="mx-auto" /><p className="text-sm">Votre produit apparaît ici</p></div> : null}
+      {value ? <div className={`relative overflow-hidden rounded-2xl border border-slate-200 bg-white ${largePreview ? "h-52" : "h-32"}`}><Image src={value} alt="Selected image preview" fill sizes={largePreview ? "(max-width: 1024px) 90vw, 450px" : "320px"} className={largePreview ? "object-contain p-3" : "object-cover"} /></div> : largePreview ? <div className="grid h-44 place-content-center gap-2 rounded-2xl border border-dashed border-violet-200 bg-white/60 text-center text-violet-400"><ImageUp size={36} className="mx-auto" /><p className="text-sm">Your product appears here</p></div> : null}
     </div>
   );
 }
