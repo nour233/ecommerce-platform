@@ -121,3 +121,7 @@ export const storefrontChatSchema = z.object({
     content: z.string().trim().min(1).max(600)
   })).min(1).max(8)
 });
+
+export const aiSetupSchema = z.object({
+  productId: z.string().trim().min(1)
+});

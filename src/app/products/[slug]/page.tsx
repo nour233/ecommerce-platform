@@ -17,7 +17,7 @@ export default async function ProductDetailPage({ params }: ProductDetailProps) 
   const page = await catalogService.getProductPage(slug);
   if (!page) notFound();
 
-  const { product, related, setup } = page;
+  const { product, related } = page;
   const reviews = await reviewRepository.list(product.id);
 
   return (
@@ -39,7 +39,7 @@ export default async function ProductDetailPage({ params }: ProductDetailProps) 
           <div className="mt-8">
             <ProductActions productId={product.id} />
           </div>
-          <CompleteYourSetup product={product} recommendations={setup} />
+          <CompleteYourSetup product={product} />
           <div className="mt-7 flex flex-wrap gap-2">
             {product.tags.map((tag) => (
               <span key={tag} className="rounded-md bg-cream px-3 py-1 text-xs font-semibold text-ink/70">
