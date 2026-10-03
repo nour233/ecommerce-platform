@@ -48,6 +48,12 @@ const integerFormatter = new Intl.NumberFormat("en-US", { maximumFractionDigits:
 const editableNumber = (value: number) => value === 0 ? "" : value;
 const parseEditableNumber = (value: string) => value === "" ? 0 : Number(value);
 const toSlug = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 100);
+function paginateAdmin<T>(items: T[], page: number, pageSize = 8) {
+  const pageCount = Math.max(1, Math.ceil(items.length / pageSize));
+  const currentPage = Math.min(Math.max(1, page), pageCount);
+  const start = (currentPage - 1) * pageSize;
+  return { items: items.slice(start, start + pageSize), page: currentPage, pageCount, from: items.length ? start + 1 : 0, to: Math.min(start + pageSize, items.length) };
+}
 
 async function adminRequest<T>(url: string, options: RequestInit): Promise<T | null> {
   const response = await fetch(url, { ...options, headers: options.body ? { "Content-Type": "application/json" } : undefined });
@@ -70,6 +76,12 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
   const router = useRouter();
   const [section, setSection] = useState<Section>("overview");
   const [query, setQuery] = useState("");
+  const [productCategoryFilter, setProductCategoryFilter] = useState("all");
+  const [productStockFilter, setProductStockFilter] = useState<"all" | "available" | "low" | "out">("all");
+  const [userRoleFilter, setUserRoleFilter] = useState<"all" | UserRole>("all");
+  const [productPage, setProductPage] = useState(1);
+  const [categoryPage, setCategoryPage] = useState(1);
+  const [userPage, setUserPage] = useState(1);
   const [products, setProducts] = useState(initialProducts);
   const [categories, setCategories] = useState(initialCategories);
   const [users, setUsers] = useState(initialUsers);
@@ -94,11 +106,14 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
   const cartItemCount = useMemo(() => userCommerce.reduce((total, commerce) => total + commerce.cart.reduce((count, item) => count + item.quantity, 0), 0), [userCommerce]);
   const wishlistItemCount = useMemo(() => userCommerce.reduce((total, commerce) => total + commerce.wishlist.length, 0), [userCommerce]);
   const normalizedQuery = query.trim().toLowerCase();
-  const visibleProducts = products.filter((product) => !normalizedQuery || `${product.name} ${product.categoryName} ${product.slug}`.toLowerCase().includes(normalizedQuery));
+  const visibleProducts = products.filter((product) => (!normalizedQuery || `${product.name} ${product.categoryName} ${product.slug}`.toLowerCase().includes(normalizedQuery)) && (productCategoryFilter === "all" || product.categoryId === productCategoryFilter) && (productStockFilter === "all" || productStockFilter === "available" && product.stock > 0 || productStockFilter === "low" && product.stock > 0 && product.stock < 10 || productStockFilter === "out" && product.stock === 0));
   const visibleCategories = categories.filter((category) => !normalizedQuery || `${category.name} ${category.description}`.toLowerCase().includes(normalizedQuery));
-  const visibleUsers = users.filter((user) => !normalizedQuery || `${user.name} ${user.email} ${user.role}`.toLowerCase().includes(normalizedQuery));
+  const visibleUsers = users.filter((user) => (!normalizedQuery || `${user.name} ${user.email} ${user.role}`.toLowerCase().includes(normalizedQuery)) && (userRoleFilter === "all" || user.role === userRoleFilter));
+  const pagedProducts = paginateAdmin(visibleProducts, productPage);
+  const pagedCategories = paginateAdmin(visibleCategories, categoryPage, 6);
+  const pagedUsers = paginateAdmin(visibleUsers, userPage);
 
-  function selectSection(value: Section) { setSection(value); setQuery(""); setMessage(null); }
+  function selectSection(value: Section) { setSection(value); setQuery(""); setProductPage(1); setCategoryPage(1); setUserPage(1); setMessage(null); }
   function report(error: unknown) { setMessage(error instanceof Error ? error.message : "The operation failed"); }
   function openProduct(product?: Product) {
     productGeneration.current += 1; setAiGenerating(false); setAiReady(false);
@@ -222,7 +237,7 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
         {section !== "overview" && section !== "campaigns" ? <header className="flex min-h-[78px] items-center justify-between border-b border-white/80 bg-white/80 px-4 backdrop-blur-xl sm:px-8">
           <div className="relative hidden w-full max-w-md sm:block">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={`Search ${section}...`} className="h-11 w-full rounded-xl border border-slate-200 bg-white/70 pl-10 pr-4 text-sm shadow-sm outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-600/10 disabled:opacity-60" />
+            <input value={query} onChange={(event) => { setQuery(event.target.value); setProductPage(1); setCategoryPage(1); setUserPage(1); }} placeholder={`Rechercher dans ${section}...`} className="h-11 w-full rounded-xl border border-slate-200 bg-white/70 pl-10 pr-4 text-sm shadow-sm outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-600/10 disabled:opacity-60" />
           </div>
           <div className="ml-auto flex items-center gap-3">
             <span className="hidden rounded-full bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-700 ring-1 ring-emerald-100 sm:inline-flex"><span className="mr-2 mt-1 size-1.5 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(34,197,94,.12)]" />Store online</span>
@@ -253,9 +268,9 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
           {section === "campaigns" ? <CampaignStudio products={products} categories={categories} /> : null}
 
           {section === "products" ? (
-            <DataPanel title="Product inventory" detail={`${visibleProducts.length} of ${products.length} products`}>
+            <div className="space-y-4"><div className="flex flex-wrap gap-3 rounded-2xl border border-white bg-white/80 p-4 shadow-sm"><select value={productCategoryFilter} onChange={(event) => { setProductCategoryFilter(event.target.value); setProductPage(1); }} className="min-h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700"><option value="all">Toutes les catégories</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select><select value={productStockFilter} onChange={(event) => { setProductStockFilter(event.target.value as typeof productStockFilter); setProductPage(1); }} className="min-h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700"><option value="all">Tous les stocks</option><option value="available">En stock</option><option value="low">Stock faible</option><option value="out">Rupture de stock</option></select><span className="self-center text-xs font-medium text-slate-500">{visibleProducts.length} résultat{visibleProducts.length > 1 ? "s" : ""}</span></div><DataPanel title="Inventaire produits" detail={`${pagedProducts.from}–${pagedProducts.to} sur ${visibleProducts.length} produit${visibleProducts.length > 1 ? "s" : ""}`}>
               <AdminTable headers={["Product", "Category", "Price", "Inventory", "Rating", ""]}>
-                {visibleProducts.map((product) => (
+                {pagedProducts.items.map((product) => (
                   <tr key={product.id} className="border-t border-slate-100 transition hover:bg-slate-50/70">
                     <td className="px-5 py-3"><div className="flex items-center gap-3"><Image src={product.imageUrl} alt="" width={52} height={52} className="size-13 rounded-md object-cover" /><div><p className="font-semibold text-slate-900">{product.name}</p><p className="mt-0.5 text-xs text-slate-400">{product.slug}</p></div></div></td>
                     <td className="px-5 py-3 text-sm text-slate-600">{product.categoryName}</td><td className="px-5 py-3 text-sm font-semibold">${product.price.toFixed(2)}</td>
@@ -264,25 +279,24 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
                   </tr>
                 ))}
               </AdminTable>
-            </DataPanel>
+              <AdminPagination {...pagedProducts} onPageChange={setProductPage} /></DataPanel></div>
           ) : null}
 
           {section === "categories" ? (
-            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {visibleCategories.map((category) => {
+            <div className="space-y-4"><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {pagedCategories.items.map((category) => {
                 const count = products.filter((product) => product.categoryId === category.id).length;
                 return <article key={category.id} role="button" tabIndex={0} onClick={() => setCategoryProductsId(category.id)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setCategoryProductsId(category.id); } }} className="group cursor-pointer overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md">
                   <div className="relative aspect-[16/8] overflow-hidden"><Image src={category.imageUrl} alt={category.name} fill className="object-cover transition duration-500 group-hover:scale-105" /><div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" /><span className="absolute bottom-3 left-4 rounded-md bg-white/90 px-2 py-1 text-xs font-semibold text-slate-800 backdrop-blur">{count} products</span></div>
                   <div className="flex items-start justify-between gap-4 p-5"><div><h2 className="text-lg font-bold">{category.name}</h2><p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-500">{category.description}</p><p className="mt-4 text-xs font-bold text-emerald-700">View {count} product{count === 1 ? "" : "s"} →</p></div><div onClick={(event) => event.stopPropagation()}><RowActions onEdit={() => openCategory(category)} onDelete={() => removeCategory(category)} /></div></div>
                 </article>;
-              })}
-            </div>
+              })}</div><AdminPagination {...pagedCategories} onPageChange={setCategoryPage} /></div>
           ) : null}
 
           {section === "users" ? (
-            <DataPanel title="Customer directory" detail={`${visibleUsers.length} registered accounts`}>
+            <div className="space-y-4"><div className="flex flex-wrap gap-3 rounded-2xl border border-white bg-white/80 p-4 shadow-sm"><select value={userRoleFilter} onChange={(event) => { setUserRoleFilter(event.target.value as typeof userRoleFilter); setUserPage(1); }} className="min-h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700"><option value="all">Tous les rôles</option><option value="customer">Clients</option><option value="admin">Administrateurs</option></select><span className="self-center text-xs font-medium text-slate-500">{visibleUsers.length} compte{visibleUsers.length > 1 ? "s" : ""}</span></div><DataPanel title="Répertoire clients" detail={`${pagedUsers.from}–${pagedUsers.to} sur ${visibleUsers.length} compte${visibleUsers.length > 1 ? "s" : ""}`}>
               <AdminTable headers={["Customer", "Joined", "Cart", "Saved", "Access", "Status", ""]}>
-                {visibleUsers.map((user) => <tr key={user.id} className="border-t border-slate-100 hover:bg-slate-50/70">
+                {pagedUsers.items.map((user) => <tr key={user.id} className="border-t border-slate-100 hover:bg-slate-50/70">
                   <td className="px-5 py-4"><div className="flex items-center gap-3"><span className={`grid size-10 place-items-center rounded-md text-sm font-bold ${user.role === "admin" ? "bg-violet-100 text-violet-700" : "bg-sky-100 text-sky-700"}`}>{user.name.slice(0, 2).toUpperCase()}</span><div><p className="font-semibold">{user.name}</p><p className="text-xs text-slate-500">{user.email}</p></div></div></td>
                   <td className="px-5 py-4 text-sm text-slate-500">{new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeZone: "UTC" }).format(new Date(user.createdAt))}</td>
                   <td className="px-5 py-4"><CommerceCount icon={ShoppingCart} value={userCommerce.find((item) => item.userId === user.id)?.cart.reduce((total, item) => total + item.quantity, 0) ?? 0} /></td>
@@ -292,7 +306,7 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
                   <td className="px-5 py-4"><div className="flex justify-end gap-1"><button type="button" onClick={() => openUser(user)} className="rounded-lg px-3 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-50">View</button><button type="button" disabled={user.id === currentUser.id} onClick={() => removeUser(user)} className="grid size-9 place-items-center rounded-md text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-20" title="Delete account" aria-label={`Delete ${user.name}`}><Trash2 size={17} /></button></div></td>
                 </tr>)}
               </AdminTable>
-            </DataPanel>
+              <AdminPagination {...pagedUsers} onPageChange={setUserPage} /></DataPanel></div>
           ) : null}
         </main>
       </div>
@@ -415,6 +429,9 @@ function StoreAuditor({ report, products, userCommerce, busy, onAudit, onNavigat
 }
 
 function DataPanel({ title, detail, children }: { title: string; detail: string; children: React.ReactNode }) { return <section className="overflow-hidden rounded-2xl border border-white bg-white/90 shadow-[0_12px_34px_rgba(15,23,42,0.06)]"><div className="flex items-center justify-between border-b border-slate-100 px-6 py-5"><div><h2 className="font-bold tracking-tight text-slate-900">{title}</h2><p className="mt-1 text-xs font-medium text-slate-400">{detail}</p></div></div>{children}</section>; }
+function AdminPagination({ page, pageCount, from, to, onPageChange }: { page: number; pageCount: number; from: number; to: number; onPageChange: (page: number) => void }) {
+  return <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-5 py-4"><p className="text-xs font-medium text-slate-500">{from}–{to} affichés · page {page} sur {pageCount}</p><div className="flex items-center gap-2"><button type="button" disabled={page === 1} onClick={() => onPageChange(page - 1)} className="min-h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40">Précédent</button><button type="button" disabled={page === pageCount} onClick={() => onPageChange(page + 1)} className="min-h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40">Suivant</button></div></div>;
+}
 function AdminTable({ headers, children }: { headers: string[]; children: React.ReactNode }) { return <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-left"><thead className="bg-slate-50/80 text-[10px] uppercase tracking-[0.12em] text-slate-400"><tr>{headers.map((header) => <th key={header} className="px-5 py-3.5 font-bold">{header}</th>)}</tr></thead><tbody>{children}</tbody></table></div>; }
 function StockBadge({ stock }: { stock: number }) { const style = stock === 0 ? "bg-red-50 text-red-700" : stock < 10 ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"; return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${style}`}>{stock === 0 ? "Out of stock" : `${stock} in stock`}</span>; }
 function UserPresence({ lastActiveAt }: { lastActiveAt?: string }) {
