@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
   ArrowUpRight,
   ChevronDown,
@@ -31,6 +31,7 @@ export function HeaderClient({ user, categories, products }: HeaderClientProps) 
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [collectionsOpen, setCollectionsOpen] = useState(false);
+  const collectionsMenuRef = useRef<HTMLDivElement>(null);
   const [accountOpen, setAccountOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
@@ -40,6 +41,17 @@ export function HeaderClient({ user, categories, products }: HeaderClientProps) 
     return products.filter((product) => [product.name, product.categoryName, ...product.tags].some((value) => value.toLowerCase().includes(normalizedQuery))).slice(0, 5);
   }, [normalizedQuery, products]);
   const accountInitials = user?.name.split(" ").filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() ?? "";
+
+  useEffect(() => {
+    if (!collectionsOpen) return;
+    function closeOnOutsideClick(event: PointerEvent) {
+      if (event.target instanceof Node && !collectionsMenuRef.current?.contains(event.target)) setCollectionsOpen(false);
+    }
+    function closeOnEscape(event: KeyboardEvent) { if (event.key === "Escape") setCollectionsOpen(false); }
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => { document.removeEventListener("pointerdown", closeOnOutsideClick); document.removeEventListener("keydown", closeOnEscape); };
+  }, [collectionsOpen]);
 
   if (pathname.startsWith("/admin")) return null;
 
@@ -128,7 +140,7 @@ export function HeaderClient({ user, categories, products }: HeaderClientProps) 
         <div className="mx-auto flex h-11 max-w-[1600px] items-center gap-1 overflow-x-auto px-3 [scrollbar-width:none] sm:px-6 lg:overflow-visible lg:px-8">
           <Link href="/" className={`shrink-0 rounded-md px-3 py-2 text-xs font-bold transition hover:bg-slate-100 ${pathname === "/" ? "text-[#d75e36]" : "text-slate-700"}`}>Home</Link>
           <Link href="/products" className={`shrink-0 rounded-md px-3 py-2 text-xs font-bold transition hover:bg-slate-100 ${pathname.startsWith("/products") ? "text-[#d75e36]" : "text-slate-700"}`}>Shop all</Link>
-          <div className="relative hidden shrink-0 lg:block">
+          <div ref={collectionsMenuRef} className="relative hidden shrink-0 lg:block">
             <button type="button" onClick={() => setCollectionsOpen((open) => !open)} aria-expanded={collectionsOpen} aria-controls="collections-menu" className={`flex items-center gap-1 rounded-md px-3 py-2 text-xs font-bold transition hover:bg-slate-100 ${pathname.startsWith("/categories/") ? "text-[#d75e36]" : "text-slate-700"}`}>
               Collections <ChevronDown size={14} className={`transition ${collectionsOpen ? "rotate-180" : ""}`} />
             </button>
