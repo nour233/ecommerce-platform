@@ -12,11 +12,6 @@
   to { opacity: 1; transform: perspective(1400px) rotateY(0) translateX(0); }
 }
 
-@keyframes admin-page-in {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
 :root {
   color-scheme: light;
 }
