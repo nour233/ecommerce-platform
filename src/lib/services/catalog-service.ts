@@ -37,9 +37,24 @@ export const catalogService = {
   async getProductPage(slug: string) {
     const product = await catalogRepository.getProductBySlug(slug);
     if (!product) return null;
-    const related = (await catalogRepository.listProducts())
+    const catalog = await catalogRepository.listProducts();
+    const related = catalog
       .filter((candidate) => candidate.categoryId === product.categoryId && candidate.id !== product.id)
       .slice(0, 3);
-    return { product, related };
+    const companionCategories: Record<string, string[]> = {
+      "cat-outdoor": ["cat-outdoor", "cat-wellness", "cat-style"],
+      "cat-wellness": ["cat-wellness", "cat-home", "cat-kitchen"],
+      "cat-home": ["cat-home", "cat-wellness", "cat-kitchen"],
+      "cat-kitchen": ["cat-kitchen", "cat-home", "cat-wellness"],
+      "cat-tech": ["cat-tech", "cat-office", "cat-home"],
+      "cat-office": ["cat-office", "cat-tech", "cat-home"],
+      "cat-style": ["cat-style", "cat-outdoor", "cat-wellness"],
+      "cat-pets": ["cat-pets"]
+    };
+    const priorities = companionCategories[product.categoryId] ?? [product.categoryId];
+    const setup = catalog.filter((candidate) => candidate.id !== product.id && candidate.stock > 0 && priorities.includes(candidate.categoryId))
+      .sort((left, right) => priorities.indexOf(left.categoryId) - priorities.indexOf(right.categoryId) || right.rating - left.rating)
+      .slice(0, 3);
+    return { product, related, setup };
   }
 };
