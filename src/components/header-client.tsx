@@ -157,7 +157,6 @@ export function HeaderClient({ user, categories, products }: HeaderClientProps) 
             <Link key={category.id} href={`/categories/${category.slug}`} className="shrink-0 rounded-md px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100 hover:text-[#d75e36] lg:hidden">{category.name}</Link>
           ))}
           <Link href="/products?sort=rating" className="shrink-0 rounded-md px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100 hover:text-[#d75e36]">Top rated</Link>
-          <Link href="/products?max=50" className="shrink-0 rounded-md px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100 hover:text-[#d75e36]">Under $50</Link>
           <div className="ml-auto hidden shrink-0 items-center gap-2 pl-6 text-xs font-bold text-moss xl:flex"><Sparkles size={15} className="text-[#e76f51]" aria-hidden="true" />New pieces, thoughtfully chosen</div>
         </div>
       </nav>
