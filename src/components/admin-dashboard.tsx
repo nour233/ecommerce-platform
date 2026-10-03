@@ -248,7 +248,7 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
 
           {message ? <div role="alert" className="mb-5 flex items-center justify-between rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800"><span>{message}</span><button onClick={() => setMessage(null)} aria-label="Dismiss"><X size={17} /></button></div> : null}
 
-          {section === "overview" ? <Overview products={products} categories={categories} userCommerce={userCommerce} inventoryValue={inventoryValue} totalStock={totalStock} cartItemCount={cartItemCount} wishlistItemCount={wishlistItemCount} audit={audit} auditBusy={auditBusy} onAudit={runStoreAudit} onNavigate={selectSection} /> : null}
+          {section === "overview" ? <Overview products={products} userCommerce={userCommerce} inventoryValue={inventoryValue} totalStock={totalStock} cartItemCount={cartItemCount} wishlistItemCount={wishlistItemCount} audit={audit} auditBusy={auditBusy} onAudit={runStoreAudit} onNavigate={selectSection} /> : null}
 
           {section === "campaigns" ? <CampaignStudio products={products} categories={categories} /> : null}
 
@@ -331,7 +331,7 @@ export function AdminDashboard({ currentUser, initialProducts, initialCategories
   );
 }
 
-function Overview({ products, categories, userCommerce, inventoryValue, totalStock, cartItemCount, wishlistItemCount, audit, auditBusy, onAudit, onNavigate }: { products: Product[]; categories: Category[]; userCommerce: UserCommerce[]; inventoryValue: number; totalStock: number; cartItemCount: number; wishlistItemCount: number; audit: AdminAuditReport | null; auditBusy: boolean; onAudit: () => void; onNavigate: (section: Section) => void }) {
+function Overview({ products, userCommerce, inventoryValue, totalStock, cartItemCount, wishlistItemCount, audit, auditBusy, onAudit, onNavigate }: { products: Product[]; userCommerce: UserCommerce[]; inventoryValue: number; totalStock: number; cartItemCount: number; wishlistItemCount: number; audit: AdminAuditReport | null; auditBusy: boolean; onAudit: () => void; onNavigate: (section: Section) => void }) {
   const lowStock = products.filter((item) => item.stock < 10);
   const availableProducts = products.filter((item) => item.stock > 0).length;
   const healthScore = products.length ? Math.round((availableProducts / products.length) * 65 + (lowStock.length === 0 ? 35 : Math.max(5, 35 - lowStock.length * 8))) : 0;
