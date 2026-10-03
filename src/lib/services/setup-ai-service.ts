@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { env } from "@/lib/env";
 import { AppError } from "@/lib/errors";
 import { catalogRepository } from "@/lib/repositories/catalog";
@@ -63,10 +62,22 @@ export const setupAiService = {
       const raw = useAnthropic
         ? payload.content?.find((item) => item.type === "tool_use")?.input
         : parseJson(payload.choices?.[0]?.message?.content ?? "");
-      const result = z.object({ productIds: z.array(z.string()).min(1).max(3), rationale: z.string().min(15).max(320) }).parse(raw);
-      const ids = [...new Set(result.productIds)].filter((id) => candidates.some((item) => item.id === id));
-      if (!ids.length || ids.length !== result.productIds.length) throw new Error("Invalid product IDs");
-      return { products: ids.map((id) => candidates.find((item) => item.id === id)!), rationale: result.rationale };
+      if (!raw || typeof raw !== "object") throw new Error("Missing AI output");
+      const answer = raw as Record<string, unknown>;
+      const selected = Array.isArray(answer.productIds) ? answer.productIds
+        : Array.isArray(answer.product_ids) ? answer.product_ids
+        : Array.isArray(answer.selectedProductIds) ? answer.selectedProductIds
+        : Array.isArray(answer.products) ? answer.products : [];
+      const ids = [...new Set(selected.map((selection) => {
+        const value = typeof selection === "string" ? selection : selection && typeof selection === "object"
+          ? String((selection as Record<string, unknown>).id ?? (selection as Record<string, unknown>).productId ?? (selection as Record<string, unknown>).name ?? "") : "";
+        const normalized = value.trim().toLocaleLowerCase();
+        return candidates.find((item) => item.id === value || item.name.toLocaleLowerCase() === normalized)?.id ?? "";
+      }).filter(Boolean))].slice(0, 3);
+      if (!ids.length) throw new Error("No valid catalog product IDs");
+      const suppliedRationale = typeof answer.rationale === "string" ? answer.rationale.trim() : typeof answer.reason === "string" ? answer.reason.trim() : "";
+      const rationale = suppliedRationale.length >= 15 ? suppliedRationale.slice(0, 320) : "AI selected these available products because they complement this item in one practical customer use scenario.";
+      return { products: ids.map((id) => candidates.find((item) => item.id === id)!), rationale };
     } catch {
       throw new AppError("The AI returned an unusable set. Please try again.", 502, "SETUP_AI_INVALID");
     }
