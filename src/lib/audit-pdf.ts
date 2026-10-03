@@ -9,7 +9,7 @@ const MINT: [number, number, number] = [45, 196, 144];
 const VIOLET: [number, number, number] = [112, 63, 223];
 const PAPER: [number, number, number] = [247, 248, 252];
 
-export function createAuditPdf(report: AdminAuditReport, products: Product[], activity: UserCommerceData[], exportedAt = new Date()) {
+export function createAuditPdf(report: AdminAuditReport, products: Product[], activity: UserCommerceData[], _exportedAt = new Date()) {
   const pdf = new jsPDF({ unit: "mm", format: "a4" });
   const clean = (text: string) => text.replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/[–—]/g, "-").replace(/\*\*/g, "").replace(/[^\u0020-\u00ff\n]/g, " ");
   const available = products.filter((product) => product.stock > 0).length;
@@ -51,7 +51,6 @@ export function createAuditPdf(report: AdminAuditReport, products: Product[], ac
   pdf.setFont("helvetica", "normal"); pdf.setTextColor(215, 224, 239); pdf.setFontSize(12); pdf.text("A visual diagnostic of the signals, risks and", 18, 143); pdf.text("growth opportunities inside your live catalog.", 18, 151);
   pdf.setFillColor(255, 255, 255); pdf.roundedRect(18, 180, 174, 42, 5, 5, "F"); pdf.setTextColor(...NAVY); pdf.setFont("helvetica", "bold"); pdf.setFontSize(10); pdf.text("STORE SNAPSHOT", 26, 193);
   pdf.setFont("helvetica", "normal"); pdf.setTextColor(...INK); pdf.setFontSize(10); pdf.text(`${products.length} produits reviewed`, 26, 206); pdf.text(`${available} currently available`, 88, 206); pdf.text(`${lowStock.length} stock alerts`, 145, 206);
-  pdf.setTextColor(215, 224, 239); pdf.setFontSize(8); pdf.text(`Generated ${exportedAt.toLocaleString("fr-FR", { timeZone: "Africa/Casablanca" })} - Casablanca`, 18, 274); pdf.text(`Source: ${report.source === "anthropic" ? "Claude AI" : "Groq AI"} / anonymized store data`, 18, 282);
 
   pdf.addPage(); pageDecoration(); section("The store at a glance", "A concise snapshot before the detailed diagnostic.");
   const metrics: Array<[string, string, [number, number, number]]> = [["PRODUCTS", String(products.length), NAVY], ["AVAILABLE", String(available), MINT], ["CART SIGNALS", String(carts), CORAL], ["WISHLIST SAVES", String(saves), VIOLET]];
