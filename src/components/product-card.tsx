@@ -26,9 +26,9 @@ export function ProductCard({ product }: { product: Product }) {
           </Link>
           <p className="hidden line-clamp-2 min-h-10 text-sm leading-5 text-ink/65 sm:block">{product.description}</p>
         </div>
-        <div className="mt-3 flex items-center justify-between gap-2 border-t border-slate-100 pt-3 sm:mt-4 sm:gap-3 sm:pt-4">
+        <div className="mt-3 border-t border-slate-100 pt-3 sm:mt-4 sm:flex sm:items-center sm:justify-between sm:gap-3 sm:pt-4">
           <p className="text-base font-bold text-[#172033] sm:text-lg">${product.price.toFixed(2)}</p>
-          <ProductActions productId={product.id} compact />
+          <div className="mt-2 flex justify-end sm:mt-0"><ProductActions productId={product.id} compact /></div>
         </div>
       </div>
     </article>
