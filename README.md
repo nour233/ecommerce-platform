@@ -182,6 +182,10 @@ The local application runs at `http://localhost:3000`. Configure the same AWS Dy
 
 ![Product details](public/screenshots/product-details.jpg)
 
+### AI Shopping Stylist
+
+![AI Shopping Stylist product set](public/screenshots/shopping-stylist.jpg)
+
 ### Mobile catalog
 
 ![Mobile catalog](public/screenshots/mobile-catalog.jpg)
