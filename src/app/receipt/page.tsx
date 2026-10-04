@@ -1,0 +1,16 @@
+import Link from "next/link";
+import { CheckCircle2, ReceiptText, ShoppingBag } from "lucide-react";
+
+type ReceiptPageProps = { searchParams: Promise<Record<string, string | string[] | undefined>> };
+
+export default async function ReceiptPage({ searchParams }: ReceiptPageProps) {
+  const params = await searchParams;
+  const reference = typeof params.reference === "string" ? params.reference : "";
+  const total = Number(typeof params.total === "string" ? params.total : "NaN");
+  const items = Number(typeof params.items === "string" ? params.items : "NaN");
+  const valid = /^CC-CART-[A-Z0-9-]{3,80}$/.test(reference) && Number.isFinite(total) && total >= 0 && total <= 1_000_000 && Number.isInteger(items) && items > 0 && items <= 100;
+
+  if (!valid) return <main className="grid min-h-[70vh] place-items-center bg-[#f4f5f3] px-4"><section className="max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-xl shadow-slate-900/5"><ReceiptText className="mx-auto size-11 text-[#ef8354]" /><h1 className="mt-5 text-2xl font-bold text-[#172033]">Receipt not found</h1><p className="mt-3 text-sm leading-6 text-slate-500">This receipt link is incomplete or no longer valid.</p><Link href="/" className="mt-6 inline-flex min-h-11 items-center rounded-xl bg-[#172033] px-4 text-sm font-bold text-white">Return to CommerceCraft</Link></section></main>;
+
+  return <main className="min-h-[70vh] bg-[#f4f5f3] px-4 py-12 sm:px-6 sm:py-16"><section className="mx-auto max-w-xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,.10)]"><div className="bg-[#172033] px-6 py-7 text-white sm:px-8"><div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-2xl bg-[#ef8354] text-[#172033]"><ReceiptText size={22} /></span><div><p className="text-xs font-bold uppercase tracking-[.16em] text-[#ffb38f]">CommerceCraft</p><h1 className="mt-1 text-xl font-bold">Cart receipt</h1></div></div></div><div className="p-6 sm:p-8"><div className="flex items-start gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-emerald-800"><CheckCircle2 className="mt-0.5 shrink-0" size={19} /><p className="text-sm leading-6">Reference saved. Keep this page for your cart total and item count.</p></div><dl className="mt-7 space-y-5"><div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-5"><dt className="text-sm text-slate-500">Reference</dt><dd className="break-all text-right font-mono text-xs font-bold text-slate-900">{reference}</dd></div><div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-5"><dt className="text-sm text-slate-500">Items</dt><dd className="font-bold text-slate-900">{items}</dd></div><div className="flex items-center justify-between gap-4"><dt className="text-base font-bold text-slate-900">Cart total</dt><dd className="text-2xl font-bold text-[#172033]">${total.toFixed(2)} <span className="text-sm text-slate-500">USD</span></dd></div></dl><p className="mt-7 text-xs leading-5 text-slate-500">This is a cart reference. Payment is confirmed only at checkout.</p><Link href="/products" className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#ef8354] px-4 text-sm font-bold text-white"><ShoppingBag size={17} />Continue shopping</Link></div></section></main>;
+}
