@@ -1,5 +1,7 @@
 # CommerceCraft
 
+[Live dashboard](https://ecommerce-platform-six-mauve.vercel.app/admin) · [Storefront](https://ecommerce-platform-six-mauve.vercel.app/)
+
 ## Project Overview
 
 CommerceCraft is a full-stack e-commerce application. Visitors can browse a catalog, search and filter products, create an account with email verification, manage a cart and wishlist, and access administration features according to their role.
@@ -16,10 +18,23 @@ CommerceCraft is a full-stack e-commerce application. Visitors can browse a cata
 - Persistent cart with quantity controls, stock validation, and subtotal calculation
 - Persistent wishlist with duplicate prevention
 - Administrator dashboard with product, category, user, cart, and wishlist management
-- AI Store Insights based on inventory, cart, and wishlist activity
-- Optional AI Product Copilot that creates editable catalog details from a product image
-- AI Campaign Generator with hosted Gemini generation (free-tier quotas apply), visual previews, editing, approval and storefront publication. See [setup and workflow](docs/ai-campaigns.md).
+- AI Store Auditor that turns inventory, cart, wishlist, and catalog-quality signals into actionable priorities
+- AI Product Copilot that prepares editable catalog details from an image while keeping the merchant in control of the final save
+- AI Campaign Generator with draft, review, edit, approval, and publication stages. See [setup and workflow](docs/ai-campaigns.md).
+- Storefront AI Shopping Stylist and product-guidance chatbot, both grounded in available catalog items
 - Loading, empty, validation, error, and not-found states
+
+## Admin Dashboard Coverage
+
+| Requirement | Implementation |
+| --- | --- |
+| Dashboard overview | Live totals for products, categories, users, cart activity, wishlist saves, inventory value, and AI-driven store signals |
+| Product management | Create, browse, search, filter, paginate, edit, delete, update stock including zero, upload an image, and generate editable AI product details |
+| Category management | Create, browse, search, edit, delete, and inspect the products assigned to each category |
+| User management | Browse and filter users; view profile, role, cart, wishlist, and related products; edit account data or remove an account |
+| Cart and wishlist | Customer-level cart quantities, subtotal, saved products, and product relationships are visible from the customer detail view |
+| Safe operations | Zod validation, role checks, error responses, loading states, empty states, and confirmation prompts before destructive actions |
+| Responsive interface | Tailwind layouts adapt from mobile to desktop; admin data panels and editors retain usable spacing at narrow widths |
 
 ## Technologies Used
 
@@ -84,7 +99,7 @@ User
   -> AWS DynamoDB
 ```
 
-UI components never access DynamoDB directly. Services apply business rules, repositories isolate database operations, and shared types and utilities keep application behavior consistent.
+UI components never access DynamoDB directly. Services apply business rules, repositories isolate database operations, and shared types and utilities keep application behavior consistent. All AI-provider calls also stay in the server layer; browser code never receives provider credentials.
 
 ## DynamoDB Configuration
 
@@ -117,18 +132,18 @@ Repositories provide read, create, update, and delete operations. Cart and wishl
 | `MAIL_FROM` | Sender email address |
 | `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name used for image uploads |
 | `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET` | Unsigned Cloudinary upload preset used by the admin dashboard |
-| `GEMINI_API_KEY` | Gemini key used by the optional AI Product Copilot and campaign generator |
-| `ANTHROPIC_API_KEY` | Optional Claude key. When present, Claude is used for both AI tools before Groq and Gemini. |
+| `GEMINI_API_KEY` | Optional Gemini key used when no preferred provider is configured |
+| `ANTHROPIC_API_KEY` | Optional Claude key. When present, Claude is preferred for text and vision AI tools. |
 | `ANTHROPIC_TEXT_MODEL` | Optional Claude text model override (defaults to `claude-haiku-4-5-20251001`) |
 | `ANTHROPIC_VISION_MODEL` | Optional Claude vision model override (defaults to `claude-haiku-4-5-20251001`) |
-| `GROQ_API_KEY` | Optional Groq key. When present, Groq is used for both AI tools before Gemini. |
+| `GROQ_API_KEY` | Optional Groq text-model fallback when Claude is unavailable |
 | `GROQ_TEXT_MODEL` | Optional Groq text model override (defaults to `qwen/qwen3.8-27b`) |
 | `GROQ_VISION_MODEL` | Optional Groq vision model override (defaults to `qwen/qwen3.8-27b`) |
 | `GEMINI_PRODUCT_ASSISTANT_MODEL` | Vision model used by the Product Copilot; defaults to `gemini-3.8-flash` |
 | `AWS_ACCESS_KEY_ID` | AWS access key for cloud environments |
 | `AWS_SECRET_ACCESS_KEY` | AWS secret key for cloud environments |
 
-Secrets are stored in `.env*.local` files or in the hosting provider's secret manager. Local environment files are ignored by Git.
+Secrets are stored in `.env*.local` files or in the hosting provider's secret manager. Local environment files are ignored by Git. Do not commit AWS, email, or AI-provider credentials.
 
 ## Installation Instructions
 
@@ -171,4 +186,10 @@ The local application runs at `http://localhost:3000`. Configure the same AWS Dy
 
 ### Administration dashboard
 
-![Administration dashboard](https://raw.githubusercontent.com/nour233/ecommerce-platform/57df46191e1d543ad3394957ad543dc1f8b8071d/public/screenshots/admin.jpg)
+![Administration dashboard](public/screenshots/admin.jpg)
+
+## Submission Checklist
+
+- GitHub repository: include this README, the DynamoDB setup script, and no local environment files.
+- Live dashboard: [ecommerce-platform-six-mauve.vercel.app/admin](https://ecommerce-platform-six-mauve.vercel.app/admin)
+- Evidence: use the screenshots above and the admin walkthrough to demonstrate dashboard, product, category, customer, cart, wishlist, and AI workflows.

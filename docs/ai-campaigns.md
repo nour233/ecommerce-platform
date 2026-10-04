@@ -1,14 +1,12 @@
 ﻿# Hosted AI Campaign Generator
 
-Generation now uses Gemini from the Next.js server. Ollama and local model downloads are no longer required.
+Campaign generation runs in the Next.js server layer. Claude is used when an `ANTHROPIC_API_KEY` is configured; Groq and Gemini provide secure fallbacks according to the available server-side environment variables. Local model downloads are not required.
 
 ## Deploy
 
-Add GEMINI_API_KEY in your hosting provider's server-side environment settings and redeploy. This is the same key used by Product Copilot. The optional GEMINI_CAMPAIGN_MODEL defaults to gemini-3.8-flash. Never expose the key with a NEXT_PUBLIC_ prefix. Your local .env.local is not automatically uploaded to Vercel.
+Configure one supported AI provider in the hosting provider's server-side environment settings and redeploy. `ANTHROPIC_API_KEY` is preferred when present, with `GROQ_API_KEY` and `GEMINI_API_KEY` available as fallbacks. Never expose a provider key with a `NEXT_PUBLIC_` prefix. Your local `.env.local` file is not automatically uploaded to Vercel.
 
-Use a Google AI Studio project on the Free Tier to avoid API charges. Free usage is quota-limited. A key from a billed project may incur charges; the app cannot determine the billing tier. This integration does not enable billing and does not fall back to a paid provider. Pricing: https://ai.google.dev/gemini-api/docs/pricing
-
-The campaign brief and up to 60 in-stock catalog candidates are sent to Google; no customer data is sent. Interactions history storage is disabled, but Google's free-tier data terms still apply. The request timeout is 50 seconds; allow at least 60 seconds on your hosting function.
+The campaign brief and up to 60 in-stock catalog candidates are sent to the configured provider. Customer names, email addresses, and other personal data are excluded. The request timeout is 50 seconds; allow at least 60 seconds on the hosting function.
 
 ## Workflow
 
