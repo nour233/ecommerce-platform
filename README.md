@@ -228,25 +228,6 @@ The local application runs at `http://localhost:3000`. Configure the same AWS Dy
 ### Admin customers
 ![Admin customers](public/screenshots/admin-customers.jpg)
 
-## Screenshots for the Internship Submission
-
-Use these screens in this order when completing the Internship Dashboard. They demonstrate the requirements without duplicating the same view.
-
-| Screen to capture | What it demonstrates |
-| --- | --- |
-| **Admin overview** | Live product, category, user, cart, wishlist, stock, and activity metrics |
-| **Admin products** | Product search, collection and stock filters, pagination, edit/delete actions, and stock status |
-| **Product editor / AI Product Copilot** | Image upload, AI-generated editable fields, validation, and save action |
-| **Admin categories** | Category search, category cards, product counts, and edit/delete actions |
-| **Admin customers** | Customer directory, role controls, cart and wishlist relationships, and customer detail view |
-| **AI Store Auditor** | The generated stock, interest, and catalog-quality recommendations |
-| **AI Campaigns** | One screen before generation and one generated campaign in draft/review state |
-| **Storefront home** | Navigation, featured collections, campaign presentation, and responsive design |
-| **Product catalog on mobile** | Two product cards per row, filters, and mobile navigation |
-| **Product details** | Product information, cart/wishlist controls, and AI Shopping Stylist |
-| **Chatbot conversation** | A real product question with product links in the response |
-
-The repository already includes clean storefront and dashboard captures in [`public/screenshots`](public/screenshots). Capture the signed-in admin views from the deployed dashboard before submission so the displayed data matches the live store.
 
 ## Submission Checklist
 
