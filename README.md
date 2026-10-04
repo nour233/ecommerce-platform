@@ -192,6 +192,10 @@ The local application runs at `http://localhost:3000`. Configure the same AWS Dy
 
 ![Administration dashboard](public/screenshots/admin.jpg)
 
+### Customer directory (privacy-safe)
+
+![Customer directory with email addresses blurred](public/screenshots/admin-customers-private.jpg)
+
 ## Screenshots for the Internship Submission
 
 Use these screens in this order when completing the Internship Dashboard. They demonstrate the requirements without duplicating the same view.
