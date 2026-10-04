@@ -229,8 +229,3 @@ The local application runs at `http://localhost:3000`. Configure the same AWS Dy
 ![Admin customers](public/screenshots/admin-customers.jpg)
 
 
-## Submission Checklist
-
-- GitHub repository: include this README, the DynamoDB setup script, and no local environment files.
-- Live dashboard: [ecommerce-platform-six-mauve.vercel.app/admin](https://ecommerce-platform-six-mauve.vercel.app/admin)
-- Evidence: use the screenshots above and the admin walkthrough to demonstrate dashboard, product, category, customer, cart, wishlist, and AI workflows.
