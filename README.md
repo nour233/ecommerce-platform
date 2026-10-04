@@ -164,6 +164,12 @@ The local application runs at `http://localhost:3000`. Configure the same AWS Dy
 
 ![Homepage](public/screenshots/home.jpg)
 
+
+### Chatbot conversation
+
+
+![Chatbot conversation](public/screenshots/Chatbotconversation.jpg)
+
 ### Product catalog
 
 ![Product catalog](public/screenshots/products.jpg)
@@ -192,9 +198,31 @@ The local application runs at `http://localhost:3000`. Configure the same AWS Dy
 
 ![Administration dashboard](public/screenshots/admin.jpg)
 
-### Customer directory (privacy-safe)
 
-![Customer directory with email addresses blurred](public/screenshots/admin-customers-private.jpg)
+### Admin products
+
+![Admin products](public/screenshots/Admin products.jpg)
+
+
+### AI Product Copilot
+
+![AI Product Copilot](public/screenshots/AI Product Copilot.jpg)
+
+
+
+### Admin categories
+![Admin categories](public/screenshots/Admin categories.jpg)
+
+### AI Campaigns
+
+![AI Campaigns](public/screenshots/AI Campaigns.png)
+
+
+
+
+
+### Admin customers
+![Admin customers](public/screenshots/Admin customers.jpg)
 
 ## Screenshots for the Internship Submission
 
