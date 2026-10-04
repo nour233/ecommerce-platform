@@ -41,12 +41,12 @@ export default async function HomePage() {
           <div><p className="text-sm font-semibold uppercase text-[#d65f3f]">Shop your way</p><h2 className="mt-2 max-w-2xl text-4xl font-bold leading-tight text-[#172033] sm:text-5xl">Collections for every part of your day.</h2></div>
           <Link href="/products" className="hidden items-center gap-2 border-b border-slate-900 pb-1 text-sm font-semibold sm:flex">View everything <ArrowRight size={16} /></Link>
         </div>
-        <div className="grid gap-5 md:grid-cols-12">
+        <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-12">
           {categories.map((category, index) => (
-            <Link key={category.id} href={`/categories/${category.slug}`} className={`group relative isolate min-h-[360px] overflow-hidden rounded-md ${index === 0 ? "md:col-span-7" : index === 1 ? "md:col-span-5" : "md:col-span-12 lg:min-h-[420px]"}`}>
+            <Link key={category.id} href={`/categories/${category.slug}`} className={`group relative isolate min-h-[220px] overflow-hidden rounded-md sm:min-h-[360px] ${index === 0 ? "md:col-span-7" : index === 1 ? "md:col-span-5" : "md:col-span-12 lg:min-h-[420px]"}`}>
               <Image src={category.imageUrl} alt={category.name} fill className="object-cover transition duration-700 group-hover:scale-105" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between gap-4 p-6 text-white sm:p-8"><div><p className="text-xs font-semibold uppercase text-white/70">0{index + 1} / Collection</p><h3 className="mt-2 text-3xl font-bold">{category.name}</h3><p className="mt-2 max-w-lg text-sm leading-6 text-white/75">{category.description}</p></div><span className="grid size-12 shrink-0 place-items-center rounded-full bg-white text-slate-950 transition group-hover:rotate-[-35deg]"><ArrowRight size={19} /></span></div>
+              <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between gap-3 p-4 text-white sm:gap-4 sm:p-8"><div className="min-w-0"><p className="text-[10px] font-semibold uppercase text-white/70 sm:text-xs">0{index + 1} / Collection</p><h3 className="mt-1 line-clamp-2 text-xl font-bold leading-tight sm:mt-2 sm:text-3xl">{category.name}</h3><p className="mt-2 hidden max-w-lg text-sm leading-6 text-white/75 sm:block">{category.description}</p></div><span className="grid size-10 shrink-0 place-items-center rounded-full bg-white text-slate-950 transition group-hover:rotate-[-35deg] sm:size-12"><ArrowRight size={17} className="sm:size-[19px]" /></span></div>
             </Link>
           ))}
         </div>
