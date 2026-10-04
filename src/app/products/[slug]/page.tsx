@@ -23,8 +23,8 @@ export default async function ProductDetailPage({ params }: ProductDetailProps) 
   return (
     <div className="bg-white">
       <section className="mx-auto grid max-w-[1500px] lg:grid-cols-[1.15fr_.85fr]">
-        <div className="relative min-h-[480px] bg-slate-100 lg:min-h-[720px]"><Image src={product.imageUrl} alt={product.name} fill priority className="object-cover" /></div>
-        <div className="flex flex-col justify-center px-6 py-12 sm:px-10 lg:px-14">
+        <div className="relative min-h-[360px] bg-slate-100 sm:min-h-[480px] lg:min-h-[720px]"><Image src={product.imageUrl} alt={product.name} fill priority className="object-cover" /></div>
+        <div className="flex flex-col justify-center px-4 py-9 sm:px-10 sm:py-12 lg:px-14">
           <p className="text-sm font-semibold uppercase text-[#d65f3f]">{product.categoryName}</p>
           <h1 className="mt-3 text-4xl font-bold leading-tight text-[#172033] sm:text-5xl">{product.name}</h1>
           <div className="mt-4 flex items-center gap-3 text-sm text-ink/70">
