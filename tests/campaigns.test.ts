@@ -8,9 +8,9 @@ const brief = { theme: "Summer essentials", audience: "Everyday shoppers", tone:
 const product = store.products.find(p => p.stock > 0)!;
 const content = { title: "Summer Essentials", description: "Discover thoughtfully selected everyday essentials.", bannerText: "Explore the collection", socialCaption: "A fresh selection for your summer. #SummerEssentials", palette: "sunset", productIds: [product.id] };
 function ai(value: unknown = content) {
-  return vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ steps: [{ type: "model_output", content: [{ type: "text", text: JSON.stringify(value) }] }] })));
+  return vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ content: [{ type: "tool_use", input: value }] })));
 }
-beforeEach(() => vi.stubEnv("GEMINI_API_KEY", "test-key"));
+beforeEach(() => vi.stubEnv("ANTHROPIC_API_KEY", "test-key"));
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 
 describe("campaign generation and publication", () => {
@@ -21,8 +21,8 @@ describe("campaign generation and publication", () => {
     expect(result.createdBy).toBe("admin");
     expect(await campaignRepository.get(result.id)).toEqual(result);
     const [url, request] = vi.mocked(fetch).mock.calls[0];
-    expect(url).toBe("https://generativelanguage.googleapis.com/v1beta/interactions");
-    expect(JSON.parse(request!.body as string).store).toBe(false);
+    expect(url).toBe("https://api.anthropic.com/v1/messages");
+    expect(JSON.parse(request!.body as string).tool_choice).toEqual({ type: "tool", name: "create_campaign" });
   });
   it("requires approval, publishes, and requires unpublishing before editing", async () => {
     ai();

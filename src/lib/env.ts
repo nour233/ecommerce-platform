@@ -17,8 +17,6 @@ export const env = {
   smtpUser: process.env.SMTP_USER,
   smtpPass: process.env.SMTP_PASS,
   mailFrom: process.env.MAIL_FROM,
-  geminiApiKey: process.env.GEMINI_API_KEY,
-  geminiProductAssistantModel: process.env.GEMINI_PRODUCT_ASSISTANT_MODEL ?? "gemini-3.8-flash",
   anthropicApiKey: process.env.ANTHROPIC_API_KEY,
   anthropicTextModel: process.env.ANTHROPIC_TEXT_MODEL ?? "claude-haiku-4-5-20251001",
   anthropicVisionModel: process.env.ANTHROPIC_VISION_MODEL ?? "claude-haiku-4-5-20251001",

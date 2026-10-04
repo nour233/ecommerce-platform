@@ -16,12 +16,13 @@ CommerceCraft is a full-stack e-commerce application. Visitors can browse a cata
 - Email-based password recovery
 - Editable user profile
 - Persistent cart with quantity controls, stock validation, and subtotal calculation
+- Digital receipt QR code in the cart that opens a dedicated receipt page with the cart reference, total, and item count
 - Persistent wishlist with duplicate prevention
 - Administrator dashboard with product, category, user, cart, and wishlist management
-- AI Store Auditor that turns inventory, cart, wishlist, and catalog-quality signals into actionable priorities
-- AI Product Copilot that prepares editable catalog details from an image while keeping the merchant in control of the final save
-- AI Campaign Generator with draft, review, edit, approval, and publication stages. See [setup and workflow](docs/ai-campaigns.md).
-- Storefront AI Shopping Stylist and product-guidance chatbot, both grounded in available catalog items
+- Claude-powered AI Store Auditor that turns inventory, cart, wishlist, and catalog-quality signals into actionable priorities, with a downloadable visual PDF report
+- Claude-powered AI Product Copilot that prepares editable catalog details from an image while keeping the merchant in control of the final save
+- Claude-powered AI Campaign Generator with draft, review, edit, approval, and publication stages. See [setup and workflow](docs/ai-campaigns.md).
+- Claude-powered Storefront AI Shopping Stylist and product-guidance chatbot, both grounded in available catalog items
 - Loading, empty, validation, error, and not-found states
 
 ## Admin Dashboard Coverage
@@ -132,14 +133,12 @@ Repositories provide read, create, update, and delete operations. Cart and wishl
 | `MAIL_FROM` | Sender email address |
 | `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name used for image uploads |
 | `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET` | Unsigned Cloudinary upload preset used by the admin dashboard |
-| `GEMINI_API_KEY` | Optional Gemini key used when no preferred provider is configured |
-| `ANTHROPIC_API_KEY` | Optional Claude key. When present, Claude is preferred for text and vision AI tools. |
+| `ANTHROPIC_API_KEY` | Claude API key used server-side for text and vision AI features. |
 | `ANTHROPIC_TEXT_MODEL` | Optional Claude text model override (defaults to `claude-haiku-4-5-20251001`) |
 | `ANTHROPIC_VISION_MODEL` | Optional Claude vision model override (defaults to `claude-haiku-4-5-20251001`) |
 | `GROQ_API_KEY` | Optional Groq text-model fallback when Claude is unavailable |
 | `GROQ_TEXT_MODEL` | Optional Groq text model override (defaults to `qwen/qwen3.8-27b`) |
 | `GROQ_VISION_MODEL` | Optional Groq vision model override (defaults to `qwen/qwen3.8-27b`) |
-| `GEMINI_PRODUCT_ASSISTANT_MODEL` | Vision model used by the Product Copilot; defaults to `gemini-3.8-flash` |
 | `AWS_ACCESS_KEY_ID` | AWS access key for cloud environments |
 | `AWS_SECRET_ACCESS_KEY` | AWS secret key for cloud environments |
 
@@ -227,5 +226,4 @@ The local application runs at `http://localhost:3000`. Configure the same AWS Dy
 
 ### Admin customers
 ![Admin customers](public/screenshots/admin-customers.jpg)
-
 

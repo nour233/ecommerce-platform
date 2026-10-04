@@ -11,7 +11,7 @@ it("exports a paginated PDF without losing the end of a long diagnostic", () => 
 });
 
 it("exports an empty catalog with explicit empty states", () => {
-  const pdf = createAuditPdf({ source: "groq", narrative: "Catalogue vide." }, [], []);
+  const pdf = createAuditPdf({ source: "anthropic", narrative: "Catalogue vide." }, [], []);
   expect(pdf.output()).toContain("0 produits");
   expect(pdf.output()).toContain("Aucun signal");
 });

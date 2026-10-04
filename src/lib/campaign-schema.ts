@@ -33,7 +33,7 @@ export type Campaign = CampaignContent & {
   createdAt: string;
   updatedAt: string;
   createdBy: string;
-  generationSource?: "gemini" | "anthropic" | "groq" | "catalog-fallback";
+  generationSource?: "anthropic" | "groq" | "catalog-fallback";
 };
 
 export const campaignMutationSchema = z.discriminatedUnion("action", [

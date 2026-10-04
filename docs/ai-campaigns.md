@@ -1,10 +1,10 @@
 ﻿# Hosted AI Campaign Generator
 
-Campaign generation runs in the Next.js server layer. Claude is used when an `ANTHROPIC_API_KEY` is configured; Groq and Gemini provide secure fallbacks according to the available server-side environment variables. Local model downloads are not required.
+Campaign generation runs in the Next.js server layer. Claude powers generation through the server-side `ANTHROPIC_API_KEY`; Groq can be configured only as a secure fallback. Local model downloads are not required.
 
 ## Deploy
 
-Configure one supported AI provider in the hosting provider's server-side environment settings and redeploy. `ANTHROPIC_API_KEY` is preferred when present, with `GROQ_API_KEY` and `GEMINI_API_KEY` available as fallbacks. Never expose a provider key with a `NEXT_PUBLIC_` prefix. Your local `.env.local` file is not automatically uploaded to Vercel.
+Configure `ANTHROPIC_API_KEY` in the hosting provider's server-side environment settings and redeploy. `GROQ_API_KEY` is optional as a fallback. Never expose a provider key with a `NEXT_PUBLIC_` prefix. Your local `.env.local` file is not automatically uploaded to Vercel.
 
 The campaign brief and up to 60 in-stock catalog candidates are sent to the configured provider. Customer names, email addresses, and other personal data are excluded. The request timeout is 50 seconds; allow at least 60 seconds on the hosting function.
 
