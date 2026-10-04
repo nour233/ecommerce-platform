@@ -34,8 +34,8 @@ export function StoreChatWidget() {
     setMessages(next); setInput(""); setBusy(true);
     try {
       const response = await fetch("/api/storefront/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: next }) });
-      const payload = await response.json() as { data?: { message?: string; products?: ProductReference[] } };
-      setMessages((current) => [...current, { role: "assistant", content: payload.data?.message || "Je rencontre un problème temporaire. Réessayez dans un instant.", products: payload.data?.products }]);
+      const payload = await response.json() as { error?: string; data?: { message?: string; products?: ProductReference[] } };
+      setMessages((current) => [...current, { role: "assistant", content: payload.error || payload.data?.message || "Je rencontre un problème temporaire. Réessayez dans un instant.", products: payload.data?.products }]);
     } catch {
       setMessages((current) => [...current, { role: "assistant", content: "Je rencontre un problème temporaire. Réessayez dans un instant." }]);
     } finally { setBusy(false); }
