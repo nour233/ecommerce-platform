@@ -15,9 +15,9 @@ describe("public AI quota", () => {
     await expect(consumePublicAiAttempt(request, new Date("2030-01-02T12:00:00Z"))).resolves.toBeUndefined();
   });
 
-  it("rejects in-memory quotas in production", async () => {
+  it("keeps the bounded in-memory quota available in production demo mode", async () => {
     vi.stubEnv("NODE_ENV", "production");
-    await expect(consumePublicAiAttempt(request)).rejects.toMatchObject({ statusCode: 503 });
+    await expect(consumePublicAiAttempt(request, new Date("2031-01-01T12:00:00Z"))).resolves.toBeUndefined();
   });
 
   it("uses a conditional atomic database increment and fails closed", async () => {
