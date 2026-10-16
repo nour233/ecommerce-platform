@@ -1,18 +1,16 @@
 import { AppError } from "@/lib/errors";
-import { getSessionUserId } from "@/lib/auth";
-import { userRepository } from "@/lib/repositories/users";
+import { getCurrentUser } from "@/lib/current-user";
 
 export async function currentUserId() {
-  const userId = await getSessionUserId();
-  if (!userId || !(await userRepository.getUser(userId))) {
+  const user = await getCurrentUser();
+  if (!user) {
     throw new AppError("Authentication required", 401, "UNAUTHORIZED");
   }
-  return userId;
+  return user.id;
 }
 
 export async function currentAdmin() {
-  const userId = await currentUserId();
-  const user = await userRepository.getUser(userId);
+  const user = await getCurrentUser();
   if (!user || user.role !== "admin") {
     throw new AppError("Administrator access required", 403, "FORBIDDEN");
   }

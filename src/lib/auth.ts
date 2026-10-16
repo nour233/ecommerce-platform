@@ -1,13 +1,14 @@
 import { createHmac, randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { env } from "@/lib/env";
+import type { User } from "@/types";
 
 const SESSION_COOKIE = "commercecraft_session";
 const SESSION_DURATION_SECONDS = 60 * 60 * 24 * 7;
 const SCRYPT_KEY_LENGTH = 64;
 
 type SessionPayload = {
-  userId: string;
+  user: Pick<User, "id" | "name" | "email" | "role" | "createdAt">;
   expiresAt: number;
 };
 
@@ -34,9 +35,15 @@ export async function verifyPassword(password: string, hash: string, salt: strin
   return candidate.length === expected.length && timingSafeEqual(candidate, expected);
 }
 
-export async function createSession(userId: string) {
+export async function createSession(user: User) {
   const payload: SessionPayload = {
-    userId,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      createdAt: user.createdAt
+    },
     expiresAt: Math.floor(Date.now() / 1000) + SESSION_DURATION_SECONDS
   };
   const encoded = Buffer.from(JSON.stringify(payload)).toString("base64url");
@@ -55,7 +62,7 @@ export async function clearSession() {
   cookieStore.delete(SESSION_COOKIE);
 }
 
-export async function getSessionUserId() {
+export async function getSessionUser() {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   if (!token) return null;
@@ -69,9 +76,13 @@ export async function getSessionUserId() {
 
   try {
     const payload = JSON.parse(Buffer.from(encoded, "base64url").toString("utf8")) as SessionPayload;
-    if (!payload.userId || payload.expiresAt <= Math.floor(Date.now() / 1000)) return null;
-    return payload.userId;
+    if (!payload.user?.id || payload.expiresAt <= Math.floor(Date.now() / 1000)) return null;
+    return payload.user;
   } catch {
     return null;
   }
+}
+
+export async function getSessionUserId() {
+  return (await getSessionUser())?.id ?? null;
 }

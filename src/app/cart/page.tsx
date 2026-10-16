@@ -1,11 +1,9 @@
 import { CartClient } from "@/components/cart-client";
-import { getSessionUserId } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { userRepository } from "@/lib/repositories/users";
+import { getCurrentUser } from "@/lib/current-user";
 
 export default async function CartPage() {
-  const userId = await getSessionUserId();
-  if (!userId || !(await userRepository.getUser(userId))) redirect("/login?next=/cart");
+  if (!(await getCurrentUser())) redirect("/login?next=/cart");
 
   return (
     <section className="bg-[#f4f5f3] px-4 py-12 sm:px-6 lg:px-8 lg:py-16">

@@ -1,4 +1,5 @@
 import { currentUserId } from "@/lib/api";
+import { getCurrentUser } from "@/lib/current-user";
 import { toErrorResponse } from "@/lib/errors";
 import { userRepository } from "@/lib/repositories/users";
 import { authService } from "@/lib/services/auth-service";
@@ -6,7 +7,7 @@ import { profileUpdateSchema } from "@/lib/validators";
 
 export async function GET() {
   try {
-    const user = await userRepository.getUser(await currentUserId());
+    const user = await getCurrentUser();
     return user ? Response.json({ data: user }) : Response.json({ error: "User not found" }, { status: 404 });
   } catch (error) {
     return toErrorResponse(error);

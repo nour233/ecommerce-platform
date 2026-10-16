@@ -1,12 +1,10 @@
-import { getSessionUserId } from "@/lib/auth";
-import { userRepository } from "@/lib/repositories/users";
+import { getCurrentUser } from "@/lib/current-user";
 import { HeaderClient } from "@/components/header-client";
 import { catalogRepository } from "@/lib/repositories/catalog";
 
 export async function Header() {
-  const userId = await getSessionUserId();
   const [user, categories, products] = await Promise.all([
-    userId ? userRepository.getUser(userId) : null,
+    getCurrentUser(),
     catalogRepository.listCategories(),
     catalogRepository.listProducts()
   ]);
