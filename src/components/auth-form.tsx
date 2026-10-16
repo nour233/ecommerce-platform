@@ -76,11 +76,6 @@ export function AuthForm({ mode, nextPath }: AuthFormProps) {
       }
 
       if (isRegister && !isVerificationStep) {
-        if (payload.data?.verified) {
-          router.push(nextPath);
-          router.refresh();
-          return;
-        }
         setVerificationEmail(payload.data.email);
         setVerificationCode("");
         setRegisterStep("verification");

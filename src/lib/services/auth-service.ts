@@ -87,23 +87,6 @@ export const authService = {
       throw new AppError("An account already exists for this email", 409, "EMAIL_IN_USE");
     }
 
-    // The public demo runs without an email provider. Create the account
-    // immediately there so visitors can test the complete customer flow.
-    if (env.useMockDb) {
-      const credentials = await hashPassword(password);
-      const user: User = {
-        id,
-        name: name.trim(),
-        email: normalizedEmail,
-        role: "customer",
-        createdAt: new Date().toISOString()
-      };
-      await userRepository.createUser(user, credentials);
-      await userRepository.touchPresence(user.id);
-      await createSession(user.id);
-      return { email: normalizedEmail, verified: true, user };
-    }
-
     const previous = await registrationVerificationRepository.get(id);
     if (previous && !isExpired(previous.expiresAt)) {
       enforceResendCooldown(previous.sentAt);
