@@ -1,4 +1,4 @@
-import { categories, demoUser, products } from "@/lib/data/seed";
+import { categories, demoUser, demoUserCredentials, products } from "@/lib/data/seed";
 import { keys } from "@/lib/db/keys";
 import type {
   CartItem,
@@ -28,7 +28,7 @@ type Store = {
 const globalForMock = globalThis as unknown as { commerceCraftStore?: Store };
 
 const initialStore: Store = {
-  users: [demoUser],
+  users: [{ ...demoUser, ...demoUserCredentials }],
   products,
   categories,
   cart: [],
