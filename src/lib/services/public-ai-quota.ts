@@ -27,9 +27,9 @@ export async function consumePublicAiAttempt(request: Request, now = new Date())
   );
 
   if (env.useMockDb) {
-    if (process.env.NODE_ENV === "production") {
-      throw new AppError("Le quota IA nécessite une base persistante en production.", 503, "PUBLIC_AI_QUOTA_UNAVAILABLE");
-    }
+    // Demo mode intentionally uses a per-instance in-memory counter. It keeps
+    // the public AI preview available while the persistent data service is
+    // unavailable; production data mode continues to use DynamoDB below.
     for (const key of localCounters.keys()) if (!key.startsWith(`${pk}:`)) localCounters.delete(key);
     const key = `${pk}:${sk}`;
     const count = localCounters.get(key) ?? 0;
