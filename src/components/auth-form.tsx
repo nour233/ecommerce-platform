@@ -71,7 +71,14 @@ export function AuthForm({ mode, nextPath }: AuthFormProps) {
       );
       const payload = await response.json();
       if (!response.ok) {
-        setError(payload.error ?? "Unable to continue. Please try again.");
+        const fieldErrors = payload.details?.fieldErrors;
+        const validationError = [
+          fieldErrors?.name?.[0],
+          fieldErrors?.email?.[0],
+          fieldErrors?.password?.[0],
+          fieldErrors?.code?.[0]
+        ].find(Boolean);
+        setError(validationError ?? payload.error ?? "Unable to continue. Please try again.");
         return;
       }
 
